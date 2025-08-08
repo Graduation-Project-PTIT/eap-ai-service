@@ -6,7 +6,7 @@ const erdInformationExtractAgent = new Agent({
   name: "erdInformationExtractAgent",
   instructions: erdInformationExtractPrompt,
   // model: openai("gpt-4.1-nano"),
-  model: google("gemini-2.0-flash"),
+  model: google("gemini-2.5-flash"),
 });
 
 export default erdInformationExtractAgent;
