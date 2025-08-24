@@ -1,0 +1,77 @@
+name: Deploy Evaluation Service
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: linux
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }} # Uses the GitHub user who triggered the workflow
+          password: ${{ secrets.GITHUB_TOKEN }} # Automatic token for GHCR
+
+      - name: set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: "${{ github.repository_owner }}"
+
+      - name: Build and push Evaluation Service Docker image to GHCR
+        run: |
+          # Define the full image name for GHCR
+          EVALUATION_SERVICE_IMAGE="ghcr.io/$OWNER_LC/eap-evaluation-service:main"
+
+          # Build the image
+          docker build -t $EVALUATION_SERVICE_IMAGE .
+
+          # Push the image
+          docker push $EVALUATION_SERVICE_IMAGE
+
+      - name: Send repository dispatch event
+        env:
+          GH_TOKEN: ${{ secrets.GHCR_PAT }}
+        run: |
+          REPO_OWNER="${{ github.repository_owner }}"
+          REPO_NAME="eap-infra"
+          EVENT_TYPE="deploy_infra"
+
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/dispatches \
+            -d "{\"event_type\": \"$EVENT_TYPE\"}"
+
+  send-notifications:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ needs.build-and-push.result }}
+          title: "CI/CD Pipeline Status"
+          description: |
+            Repository: `${{ github.repository }}`
+            Branch: `${{ github.ref_name }}`
+            Commit: `${{ github.sha }}`
+            Workflow: `${{ github.workflow }}`
+            Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            **Build Status: ${{ needs.build-and-push.result }}**
