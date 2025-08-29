@@ -73,4 +73,4 @@ COPY --from=build /usr/src/app/.mastra ./.mastra
 EXPOSE 4111
 
 # Run the application.
-CMD pnpm start
+CMD ["pnpm", "run", "start:prod"]
