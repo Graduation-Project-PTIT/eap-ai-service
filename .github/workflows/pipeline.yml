@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: linux
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
