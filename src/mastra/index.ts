@@ -5,11 +5,6 @@ import erdEvaluationAgent from "./agents/erd-evaluation.agent";
 import { PinoLogger } from "@mastra/loggers";
 import { LibSQLStore } from "@mastra/libsql";
 
-// Load environment variables
-const corsOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
-  : ["http://localhost:3000", "http://localhost", "https://eap.thanhnd.site"];
-
 export const mastra = new Mastra({
   workflows: {
     evaluationWorkflow,
@@ -31,7 +26,7 @@ export const mastra = new Mastra({
     cors: {
       origin: ["*"],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["*"],
+      allowHeaders: ["*", "X-User-Token"], // Allow custom header
       credentials: true,
     },
   },

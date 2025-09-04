@@ -9,6 +9,7 @@ const evaluationWorkflow = createWorkflow({
   inputSchema: z.object({
     erdImage: z.string().url(),
     questionDescription: z.string(),
+    userToken: z.string().optional(), // Add user token
   }),
   outputSchema: z.object({
     extractedInformation: erdInformationExtractSchema,
@@ -18,6 +19,7 @@ const evaluationWorkflow = createWorkflow({
   .map(async ({ inputData }) => {
     return {
       erdImage: inputData.erdImage,
+      userToken: inputData.userToken,
     };
   })
   .then(erdInformationExtractStep)

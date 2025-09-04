@@ -1,11 +1,11 @@
 import { Agent } from "@mastra/core/agent";
 import erdEvaluationPrompt from "./prompts/erd-evaluation.prompt";
-import { gpt5Nano } from "../models/openai";
+import { gemini25Flash } from "../models/google";
 
 const erdEvaluationAgent = new Agent({
   name: "erdEvaluationAgent",
   instructions: erdEvaluationPrompt,
-  model: gpt5Nano,
+  model: gemini25Flash,
 });
 
 export default erdEvaluationAgent;
