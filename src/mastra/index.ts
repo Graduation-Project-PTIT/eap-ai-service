@@ -4,6 +4,7 @@ import erdInformationExtractAgent from "./agents/erd-information-extract.agent";
 import erdEvaluationAgent from "./agents/erd-evaluation.agent";
 import { PinoLogger } from "@mastra/loggers";
 import { LibSQLStore } from "@mastra/libsql";
+import { AISDKExporter } from "langsmith/vercel";
 
 export const mastra = new Mastra({
   workflows: {
@@ -28,6 +29,14 @@ export const mastra = new Mastra({
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowHeaders: ["*", "X-User-Token"], // Allow custom header
       credentials: true,
+    },
+  },
+  telemetry: {
+    serviceName: "eap-ai-service",
+    enabled: true,
+    export: {
+      type: "custom",
+      exporter: new AISDKExporter(),
     },
   },
 });

@@ -9,28 +9,36 @@ const erdEvaluationStep = createStep({
     extractedInformation: erdInformationExtractSchema,
   }),
   outputSchema: z.object({
-    extractedInformation: erdInformationExtractSchema,
     evaluationReport: z.string(),
+    score: z.number().min(0).max(100),
   }),
   execute: async ({ inputData, mastra }) => {
     const erdEvaluationAgent = mastra.getAgent("erdEvaluationAgent");
 
-    const result = await erdEvaluationAgent.generate([
-      { role: "user", content: inputData.questionDescription },
+    const result = await erdEvaluationAgent.generate(
+      [
+        { role: "user", content: inputData.questionDescription },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(inputData.extractedInformation),
+            },
+          ],
+        },
+      ],
       {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(inputData.extractedInformation),
-          },
-        ],
-      },
-    ]);
+        output: z.object({
+          evaluationReport: z.string(),
+          score: z.number().min(0).max(100),
+        }),
+      }
+    );
 
     return {
-      extractedInformation: inputData.extractedInformation,
-      evaluationReport: result.text,
+      evaluationReport: result.object.evaluationReport,
+      score: result.object.score,
     };
   },
 });

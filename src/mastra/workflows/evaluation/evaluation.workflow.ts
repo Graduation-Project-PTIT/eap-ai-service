@@ -12,8 +12,8 @@ const evaluationWorkflow = createWorkflow({
     userToken: z.string().optional(), // Add user token
   }),
   outputSchema: z.object({
-    extractedInformation: erdInformationExtractSchema,
     evaluationReport: z.string(),
+    score: z.number().min(0).max(100),
   }),
 })
   .map(async ({ inputData }) => {
