@@ -53,10 +53,12 @@ const erdEvaluationPrompt = `
 
   **1. Entities**
   *   **Entities Aligned with Problem Description:** [List entities the student correctly derived from the text. Justify with a brief reference. e.g., "'Patient' and 'Doctor' are excellent choices as they are the central subjects of the scenario."]
+  *   **Entities Not Aligned with Problem Description:** [List entities the student incorrectly derived from the text. Justify with a brief reference. e.g., "'Patient' and 'Doctor' are excellent choices as they are the central subjects of the scenario."]
   *   **Potential Missing or Alternative Entities:** [Suggest any entities that might be missing and explain why, based on the text. e.g., "The problem describes students enrolling in courses, which often implies a many-to-many relationship. Consider adding an 'Enrollment' entity to model this relationship effectively and to hold attributes like 'grade' and 'enrollment_date'."]
 
   **2. Attributes & Keys**
   *   **Well-defined:** [Mention an entity where the attributes were well-defined. e.g., "The attributes for the 'Patient' entity, such as 'name', 'address', and 'dateOfBirth', directly correspond to the information mentioned in the requirements."]
+  *   **Missing Attributes:** [Mention an entity where the attributes were missing. e.g., "The problem mentions that we need to store the 'specialty' of each doctor, which is currently missing from the 'Doctor' entity." or "A Primary Key has not been specified for this entity. A unique 'doctorID' would be a good candidate to ensure each doctor can be uniquely identified."]
   *   **Areas for Refinement:**
       *   **Entity: [Entity Name]**
           *   **Analysis:** [Comment on the attributes. e.g., "The problem mentions that we need to store the 'specialty' of each doctor, which is currently missing from the 'Doctor' entity." or "A Primary Key has not been specified for this entity. A unique 'doctorID' would be a good candidate to ensure each doctor can be uniquely identified."]
@@ -64,6 +66,7 @@ const erdEvaluationPrompt = `
   **3. Relationships & Cardinality**
 
   *   **Relationships Reflecting Business Rules:** [List any relationships and cardinalities that the student correctly interpreted from the text. e.g., "The one-to-many relationship between 'Department' and 'Employee' is modeled correctly, aligning with the rule that 'an employee belongs to exactly one department'."]
+  *   **Missing Relationships:** [List any relationships that the student missed from the text. e.g., "The problem states, 'A patient can have many appointments, and each appointment is for only one patient.' It also says, 'An appointment must be scheduled with a single doctor, but a doctor can have many appointments.'"]
   *   **Relationships to Reconsider:**
       *   **Relationship: [Entity A] and [Entity B]**
           *   **Your Model:** [State what the student modeled, e.g., "One-to-Many (1:N) from A to B"]
@@ -79,19 +82,15 @@ const erdEvaluationPrompt = `
   *   **Strengths:**
       *   [List 1-2 key things the student did well. e.g., "Excellent job identifying the core components of the system as entities."]
       *   [e.g., "The naming conventions used for entities and attributes are clear and easy to understand."]
+      *   [e.g., "The relationships between entities are well-defined and follow the rules of the problem description."]
 
+  *   **Weaknesses:**
+      *   [List 1-2 key things the student did not do well. e.g., "The cardinality of the relationship between 'Patient' and 'Appointment' is incorrect."]
+      *   [e.g., "The 'Doctor' entity is missing a critical attribute."]
+      *   [e.g., "The 'Appointment' entity should have a composite primary key consisting of 'patientID' and 'appointmentDate' to ensure uniqueness."]
   *   **Key Learning Opportunities:**
       *   [List 1-2 main takeaways. e.g., "Practice carefully translating every business rule in the description into a specific cardinality and modality on your diagram."]
       *   [e.g., "When you see phrases like 'many students take many courses', it's a strong indicator that a many-to-many relationship exists, which typically requires an associative (or bridge) entity to implement."]
-
-  This is a great effort in modeling a complex scenario. By focusing on the details of the business rules, you can make it even more precise. Keep up the great work!
-
-  
-  Review the student based on the above criteria. Provide a detailed explanation of the grade, including the strengths and weaknesses of the ERD.
-  If the student has made any mistakes, provide constructive feedback on how they can improve their ERD design.
-  If the ERD is perfect, provide positive feedback on the strengths of the ERD design.
-
-  Format the response markdown beautifully with headings, subheadings, bullet points, and code blocks
 `;
 
 export default erdEvaluationPrompt;
