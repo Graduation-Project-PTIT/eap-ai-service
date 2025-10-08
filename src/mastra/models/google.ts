@@ -3,5 +3,6 @@ import { google } from "@ai-sdk/google";
 const gemini25Flash = google("gemini-2.5-flash");
 const gemini25Pro = google("gemini-2.5-pro");
 const gemini20FlashLite = google("gemini-2.0-flash-lite");
+const gemini25FlashLite = google("gemini-2.5-flash-lite");
 
-export { gemini25Flash, gemini25Pro, gemini20FlashLite };
+export { gemini25Flash, gemini25Pro, gemini20FlashLite, gemini25FlashLite };
