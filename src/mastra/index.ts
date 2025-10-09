@@ -1,8 +1,10 @@
 import { Mastra } from "@mastra/core/mastra";
 import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
 import evaluationSyncWorkflow from "./workflows/evaluation/evaluation-sync.workflow";
+import translationWorkflow from "./workflows/translation/translation.workflow";
 import erdInformationExtractAgent from "./agents/erd-information-extract.agent";
 import erdEvaluationAgent from "./agents/erd-evaluation.agent";
+import translatorAgent from "./agents/translator.agent";
 import { PinoLogger } from "@mastra/loggers";
 import { LibSQLStore } from "@mastra/libsql";
 import { AISDKExporter } from "langsmith/vercel";
@@ -11,10 +13,12 @@ export const mastra = new Mastra({
   workflows: {
     evaluationWorkflow,
     evaluationSyncWorkflow,
+    translationWorkflow,
   },
   agents: {
     erdInformationExtractAgent,
     erdEvaluationAgent,
+    translatorAgent,
   },
   storage: new LibSQLStore({
     url: ":memory:",
