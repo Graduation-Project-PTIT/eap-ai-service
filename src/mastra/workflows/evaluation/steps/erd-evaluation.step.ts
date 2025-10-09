@@ -15,6 +15,8 @@ const erdEvaluationStep = createStep({
   execute: async ({ inputData, mastra }) => {
     const erdEvaluationAgent = mastra.getAgent("erdEvaluationAgent");
 
+    console.log("RUNNING erdEvaluationStep");
+
     const result = await erdEvaluationAgent.generate(
       [
         { role: "user", content: inputData.questionDescription },
@@ -35,6 +37,8 @@ const erdEvaluationStep = createStep({
         }),
       }
     );
+
+    console.log("FINISHED erdEvaluationStep");
 
     return {
       evaluationReport: result.object.evaluationReport,

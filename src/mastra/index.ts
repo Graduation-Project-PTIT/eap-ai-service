@@ -1,5 +1,6 @@
 import { Mastra } from "@mastra/core/mastra";
 import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
+import evaluationSyncWorkflow from "./workflows/evaluation/evaluation-sync.workflow";
 import erdInformationExtractAgent from "./agents/erd-information-extract.agent";
 import erdEvaluationAgent from "./agents/erd-evaluation.agent";
 import { PinoLogger } from "@mastra/loggers";
@@ -9,6 +10,7 @@ import { AISDKExporter } from "langsmith/vercel";
 export const mastra = new Mastra({
   workflows: {
     evaluationWorkflow,
+    evaluationSyncWorkflow,
   },
   agents: {
     erdInformationExtractAgent,
