@@ -10,6 +10,7 @@ const evaluationWorkflow = createWorkflow({
     erdImage: z.string().url(),
     questionDescription: z.string(),
     userToken: z.string().optional(), // Add user token
+    preferredFormat: z.enum(["json", "ddl", "mermaid"]).default("json"), // Format for evaluation
   }),
   outputSchema: z.object({
     evaluationReport: z.string(),
@@ -27,6 +28,7 @@ const evaluationWorkflow = createWorkflow({
     return {
       questionDescription: getInitData().questionDescription,
       extractedInformation: inputData,
+      preferredFormat: getInitData().preferredFormat,
     };
   })
   .waitForEvent("finish-refinement", erdEvaluationStep)

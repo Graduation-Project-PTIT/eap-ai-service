@@ -7,6 +7,7 @@ const erdEvaluationStep = createStep({
   inputSchema: z.object({
     questionDescription: z.string(),
     extractedInformation: erdInformationExtractSchema,
+    preferredFormat: z.enum(["json", "ddl", "mermaid"]).default("json"),
   }),
   outputSchema: z.object({
     evaluationReport: z.string(),
@@ -16,6 +17,25 @@ const erdEvaluationStep = createStep({
     const erdEvaluationAgent = mastra.getAgent("erdEvaluationAgent");
 
     console.log("RUNNING erdEvaluationStep");
+    console.log("Preferred format:", inputData.preferredFormat);
+
+    // Select the format based on user preference
+    let formattedData: string;
+    switch (inputData.preferredFormat) {
+      case "ddl":
+        formattedData = inputData.extractedInformation.ddlScript;
+        console.log("Using DDL format for evaluation");
+        break;
+      case "mermaid":
+        formattedData = inputData.extractedInformation.mermaidDiagram;
+        console.log("Using Mermaid format for evaluation");
+        break;
+      case "json":
+      default:
+        formattedData = JSON.stringify(inputData.extractedInformation.entities, null, 2);
+        console.log("Using JSON format for evaluation");
+        break;
+    }
 
     const result = await erdEvaluationAgent.generate(
       [
@@ -25,7 +45,7 @@ const erdEvaluationStep = createStep({
           content: [
             {
               type: "text",
-              text: JSON.stringify(inputData.extractedInformation),
+              text: formattedData,
             },
           ],
         },

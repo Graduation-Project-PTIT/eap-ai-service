@@ -4,7 +4,7 @@ const erdEvaluationPrompt = `
 
   1.  **INPUTS:** You will be provided with:
       *   **Problem Description:** The text or scenario the student was asked to model. This is your ONLY source of truth.
-      *   **Student's ERD:** The ERD submitted by the student for evaluation with JSON extracted information
+      *   **Student's ERD:** The ERD submitted by the student for evaluation with extracted information (may be in JSON, DDL, or Mermaid format)
 
   2.  **EVALUATION PROCESS:** Your evaluation must be an analytical interpretation, not a simple comparison.
       *   **Step 1: Deconstruct the Problem Description.** Before looking at the student's ERD, thoroughly analyze the problem description. Identify potential entities (key nouns), relationships (verbs connecting the nouns), attributes (properties of the nouns), and business rules (statements that define cardinality, e.g., "each employee belongs to one department," "a patient can have many appointments").
