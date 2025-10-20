@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import erdInformationExtractPrompt from "./prompts/erd-information-extract.prompt";
-import { gemini25FlashLite } from "../models/google";
+import { gemini25FlashLite } from "../../models/google";
 
 const erdInformationExtractAgent = new Agent({
   name: "erdInformationExtractAgent",

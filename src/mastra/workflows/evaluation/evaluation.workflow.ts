@@ -1,7 +1,6 @@
 import { createWorkflow } from "@mastra/core";
 import { z } from "zod";
 import erdInformationExtractStep from "./steps/erd-information-extract.step";
-import erdInformationExtractSchema from "../../../schemas/erdInformationExtractSchema";
 import erdEvaluationStep from "./steps/erd-evaluation.step";
 
 const evaluationWorkflow = createWorkflow({

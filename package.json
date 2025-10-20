@@ -1,5 +1,5 @@
 {
-  "name": "eap-evaluation-service",
+  "name": "eap-ai-service",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "EAP AI Service - Database Generation & ERD Evaluation",
   "type": "module",
   "engines": {
     "node": ">=20.9.0"
@@ -25,13 +25,19 @@
     "@mastra/libsql": "^0.11.0",
     "@mastra/loggers": "^0.10.3",
     "@mastra/memory": "^0.11.1",
+    "@types/node-fetch": "^2.6.13",
     "axios": "^1.10.0",
+    "dotenv": "^16.4.5",
     "langsmith": "^0.3.67",
+    "node-fetch": "^3.3.2",
+    "node-sql-parser": "^5.3.11",
     "zod": "^3.25.72"
   },
   "devDependencies": {
-    "@types/node": "^24.0.10",
+    "@types/node": "^24.3.0",
     "mastra": "^0.10.10",
-    "typescript": "^5.8.3"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   }
 }
