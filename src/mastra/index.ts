@@ -19,8 +19,7 @@ import translatorAgent from "./agents/evaluation/translator.agent";
 
 // Database generation agents
 import ddlScriptGenerationAgent from "./agents/db-generation/ddl-script-generation-agent";
-import conversationalSchemaAgent from "./agents/db-generation/conversational-schema-agent";
-
+import schemaGenerationAgent from "./agents/db-generation/schema-generation-agent";
 // Memory configuration
 import { memory } from "./memory";
 
@@ -31,7 +30,6 @@ import {
   resetConversationRoute,
   healthRoute,
 } from "../api/api-routes";
-import conversationalDesignWorkflow from "./workflows/db-generation/db-generation.workflow";
 
 // Validate required environment variables
 if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
@@ -54,7 +52,7 @@ export const mastra = new Mastra({
     evaluationSyncWorkflow,
     translationWorkflow,
     // Database generation workflows
-    conversationalDesignWorkflow,
+    dbGenerationWorkflow,
   },
   agents: {
     // Evaluation agents
@@ -63,7 +61,7 @@ export const mastra = new Mastra({
     translatorAgent,
     // Database generation agents
     ddlScriptGenerationAgent,
-    conversationalSchemaAgent,
+    schemaGenerationAgent,
   },
   // Shared storage for workflows and global state (in-memory for simplicity)
   // Agent-specific memory is configured in each agent

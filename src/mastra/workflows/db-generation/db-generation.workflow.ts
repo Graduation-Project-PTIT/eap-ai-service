@@ -1,8 +1,8 @@
 import { createWorkflow } from "@mastra/core";
 import z from "zod";
 import erdInformationGenerationSchema from "../../../schemas/erdInformationGenerationSchema";
-import conversationalSchemaStep from "./steps/conversational-schema-step";
-import conversationalDdlGenerationStep from "./steps/conversational-ddl-generation-step";
+import conversationalSchemaStep from "./steps/schema-generation-step";
+import conversationalDdlGenerationStep from "./steps/ddl-generation-step";
 
 /**
  * Unified Conversational Design Workflow
@@ -21,14 +21,12 @@ import conversationalDdlGenerationStep from "./steps/conversational-ddl-generati
  * - Agents manage their own memory automatically
  * - Returns complete schema + DDL + explanation
  */
-const conversationalDesignWorkflow = createWorkflow({
-  id: "conversationalDesignWorkflow",
+const dbGenerationWorkflow = createWorkflow({
+  id: "dbGenerationWorkflow",
 
   // Input: User message and memory identifiers
   inputSchema: z.object({
-    threadId: z
-      .string()
-      .describe("Thread ID for conversation isolation"),
+    threadId: z.string().describe("Thread ID for conversation isolation"),
     resourceId: z
       .string()
       .describe("Resource ID (typically userId or conversationId)"),
@@ -36,6 +34,11 @@ const conversationalDesignWorkflow = createWorkflow({
       .string()
       .min(1)
       .describe("The user's request or instruction"),
+    enableSearch: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe("Enable or disable web search tool for schema generation"),
   }),
 
   // Output: Updated schema, DDL script, and explanation
@@ -57,4 +60,4 @@ const conversationalDesignWorkflow = createWorkflow({
 
   .commit();
 
-export default conversationalDesignWorkflow;
+export default dbGenerationWorkflow;

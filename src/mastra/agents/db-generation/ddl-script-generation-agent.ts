@@ -2,7 +2,7 @@ import { Agent } from "@mastra/core";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
 import ddlScriptGenerationPrompt from "./prompts/ddl-script-generation-prompt";
-import { google } from "@ai-sdk/google";
+import { gemini25FlashLite } from "../../models/google";
 
 /**
  * DDL Script Generation Agent
@@ -16,7 +16,7 @@ import { google } from "@ai-sdk/google";
 const ddlScriptGenerationAgent = new Agent({
   name: "ddlScriptGenerationAgent",
   instructions: ddlScriptGenerationPrompt,
-  model: google("gemini-2.0-flash-lite"),
+  model: gemini25FlashLite,
   memory: new Memory({
     storage: new LibSQLStore({
       url: ":memory:",

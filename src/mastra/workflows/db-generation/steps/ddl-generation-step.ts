@@ -7,8 +7,8 @@ import erdInformationGenerationSchema from "../../../../schemas/erdInformationGe
  * This step generates DDL script from an updated schema.
  * DDL generation is stateless, so it only needs the schema.
  */
-const conversationalDdlGenerationStep = createStep({
-  id: "conversationalDdlGenerationStep",
+const ddlGenerationStep = createStep({
+  id: "ddlGenerationStep",
 
   inputSchema: z.object({
     threadId: z.string(),
@@ -86,4 +86,4 @@ const conversationalDdlGenerationStep = createStep({
     };
   },
 });
-export default conversationalDdlGenerationStep;
+export default ddlGenerationStep;

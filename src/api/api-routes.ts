@@ -18,7 +18,8 @@ import { memory } from "../mastra/memory";
  * Request Body:
  * {
  *   "conversationId": "string",
- *   "message": "string"
+ *   "message": "string",
+ *   "enableSearch": boolean (optional, default: true)
  * }
  *
  * Response:
@@ -37,7 +38,7 @@ export const chatRoute = registerApiRoute("/chat", {
       const mastra = c.get("mastra");
       const body = await c.req.json();
 
-      const { conversationId, message } = body;
+      const { conversationId, message, enableSearch = true } = body;
 
       // Validate input
       if (!conversationId || typeof conversationId !== "string") {
@@ -62,19 +63,30 @@ export const chatRoute = registerApiRoute("/chat", {
         );
       }
 
+      // Validate enableSearch if provided
+      if (enableSearch !== undefined && typeof enableSearch !== "boolean") {
+        return c.json(
+          {
+            error: "enableSearch must be a boolean value",
+          },
+          400
+        );
+      }
+
       console.log(
         `\n📨 Received chat message for conversation: ${conversationId}`
       );
       console.log(`💬 Message: ${message}`);
+      console.log(`🔍 Search enabled: ${enableSearch}`);
 
       // Get the workflow
-      const workflow = mastra.getWorkflow("conversationalDesignWorkflow");
+      const workflow = mastra.getWorkflow("dbGenerationWorkflow");
 
       if (!workflow) {
-        console.error("❌ Workflow not found: conversationalDesignWorkflow");
+        console.error("❌ Workflow not found: dbGenerationWorkflow");
         return c.json(
           {
-            error: "Conversational design workflow not found",
+            error: "DB generation workflow not found",
           },
           500
         );
@@ -91,6 +103,7 @@ export const chatRoute = registerApiRoute("/chat", {
           threadId: conversationId,
           resourceId: conversationId, // Using conversationId as resourceId
           userMessage: message,
+          enableSearch, // Pass search toggle to workflow
         },
       });
 
