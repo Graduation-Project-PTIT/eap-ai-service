@@ -6,8 +6,21 @@ import erdInformationExtractAgent from "./agents/erd-information-extract.agent";
 import erdEvaluationAgent from "./agents/erd-evaluation.agent";
 import translatorAgent from "./agents/translator.agent";
 import { PinoLogger } from "@mastra/loggers";
-import { LibSQLStore } from "@mastra/libsql";
+import { PostgresStore } from "@mastra/pg";
 import { AISDKExporter } from "langsmith/vercel";
+
+// Configure storage based on environment
+const storage = process.env.DATABASE_URL
+  ? new PostgresStore({
+      connectionString: process.env.DATABASE_URL,
+    })
+  : new PostgresStore({
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "5432"),
+      database: process.env.DB_NAME || "eap_db",
+      user: process.env.DB_USER || "postgres",
+      password: process.env.DB_PASSWORD || "password",
+    });
 
 export const mastra = new Mastra({
   workflows: {
@@ -20,9 +33,7 @@ export const mastra = new Mastra({
     erdEvaluationAgent,
     translatorAgent,
   },
-  storage: new LibSQLStore({
-    url: ":memory:",
-  }),
+  storage,
   logger: new PinoLogger({
     name: "Mastra",
     level: "info",
