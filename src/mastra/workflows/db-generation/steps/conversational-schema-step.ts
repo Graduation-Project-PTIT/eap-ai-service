@@ -39,17 +39,14 @@ const conversationalSchemaStep = createStep({
     console.log(`🧵 Thread ID: ${inputData.threadId}`);
     console.log(`📦 Resource ID: ${inputData.resourceId}`);
     console.log(`📝 User message: ${inputData.userMessage}`);
-    console.log(`🔍 Search enabled: ${inputData.enableSearch}`);
+    console.log(`⚠️  Search enabled flag IGNORED (tools incompatible with structured output)`);
 
     // Start performance timing
     const startTime = Date.now();
 
     try {
-      // Generate context-aware prompt based on enableSearch flag
-      // This prevents LLM confusion and malformed function calls
-      const dynamicPrompt = createSchemaGenerationPrompt(
-        inputData.enableSearch || false
-      );
+      // Always use NO-SEARCH prompt since structured output disables tools
+      const dynamicPrompt = createSchemaGenerationPrompt(false);
 
       // Prepare agent options
       const agentOptions: any = {
@@ -61,135 +58,36 @@ const conversationalSchemaStep = createStep({
           resource: inputData.resourceId,
           thread: inputData.threadId,
         },
-        // Allow multiple steps for tool calls (increased to handle updateWorkingMemory + search tools)
-        maxSteps: 10,
+        
+        // Use structured output with Zod schema to ensure valid JSON
+        // NOTE: This DISABLES tool calling - tools cannot be used with structured output
+        output: erdInformationGenerationSchema,
       };
 
-      // Control tool usage based on enableSearch
-      if (!inputData.enableSearch) {
-        console.log(`⚠️  Search tools disabled`);
-      } else {
-        console.log(`✅ Search tools enabled`);
-      }
+      console.log(`🔧 Using STRUCTURED OUTPUT mode (tools disabled)`);
+      console.log(`⚠️  Search tools are NOT available in this mode`);
 
-      // Call the agent with memory context
-      // NOTE: We removed structured output to allow tool calling
-      // NOTE: We disabled working memory to prevent Gemini malformed function call errors
+      // Call the agent with memory context and structured output
       // The agent will automatically:
       // 1. Retrieve conversation history (last 20 messages) - contains all previous schemas
-      // 2. Call search tools if needed (when enableSearch is true)
-      // 3. Return JSON response based on prompt instructions
+      // 2. Return validated JSON response matching the Zod schema
+      // 3. CANNOT call search tools (structured output disables tool calling)
       const result = await agent.generate(inputData.userMessage, agentOptions);
 
       const duration = Date.now() - startTime;
       console.log(`⏱️  Schema generation took: ${duration}ms`);
 
-      // Log tool calls if any
-      if (result.steps && result.steps.length > 0) {
-        console.log(`🔧 Agent made ${result.steps.length} step(s)`);
-        result.steps.forEach((step: any, index: number) => {
-          if (step.toolCalls && step.toolCalls.length > 0) {
-            step.toolCalls.forEach((toolCall: any) => {
-              console.log(`  - ${toolCall.toolName}`);
-            });
-          }
-        });
+      // With structured output, we get validated object directly
+      // No need for complex text parsing or JSON.parse()
+      const resultWithObject = result as any;
+      if (!resultWithObject.object) {
+        throw new Error("Agent failed to generate structured response");
       }
 
-      // Get the text response - try multiple sources
-      let responseText = result.text || "";
-
-      // If main result.text is empty, try to get from steps
-      if (!responseText || responseText.trim().length === 0) {
-        if (result.steps && result.steps.length > 0) {
-          // Collect all non-empty text from all steps
-          const allTexts = result.steps
-            .map((step: any) => step.text || "")
-            .filter((text: string) => text.trim().length > 0);
-
-          if (allTexts.length > 0) {
-            // Use the LAST non-empty text (usually the final response)
-            responseText = allTexts[allTexts.length - 1];
-          }
-        }
-      }
-
-      // If still empty, check if there's an error
-      if (!responseText || responseText.trim().length === 0) {
-        console.error(`❌ No text found in result`);
-
-        // Try to extract from response object if it exists
-        if (result.response && typeof result.response === "object") {
-          const resp = result.response as any;
-          if (resp.text) {
-            responseText = resp.text;
-          } else if (resp.body) {
-            console.error(`Error body:`, JSON.stringify(resp.body, null, 2));
-          }
-        }
-
-        // Check for errors in steps
-        if (result.steps) {
-          result.steps.forEach((step: any, i: number) => {
-            if (step.finishReason === "error" && step.response) {
-              console.error(
-                `❌ Step ${i} error:`,
-                JSON.stringify(step.response, null, 2).substring(0, 500)
-              );
-            }
-          });
-        }
-
-        // Check finishReason
-        if (result.finishReason === "error") {
-          console.error(`❌ Agent finished with ERROR status`);
-          if (result.response) {
-            console.error(
-              `Response:`,
-              JSON.stringify(result.response, null, 2).substring(0, 1000)
-            );
-          }
-        }
-      }
-
-      if (!responseText || responseText.trim().length === 0) {
-        throw new Error("Agent returned empty response");
-      }
-
-      // Parse JSON from response
-      // The prompt instructs the agent to return pure JSON
-      let parsedResponse;
-      try {
-        // Try to parse directly
-        parsedResponse = JSON.parse(responseText);
-      } catch (parseError) {
-        // If direct parse fails, try to extract JSON from markdown code blocks
-        const jsonMatch = responseText.match(
-          /```(?:json)?\s*(\{[\s\S]*?\})\s*```/
-        );
-        if (jsonMatch) {
-          parsedResponse = JSON.parse(jsonMatch[1]);
-        } else {
-          // Try to find JSON object in the text
-          const jsonObjectMatch = responseText.match(
-            /\{[\s\S]*"entities"[\s\S]*\}/
-          );
-          if (jsonObjectMatch) {
-            parsedResponse = JSON.parse(jsonObjectMatch[0]);
-          } else {
-            throw new Error("Agent did not return valid JSON");
-          }
-        }
-      }
-
-      // Validate the parsed response has required fields
-      if (!parsedResponse.entities || !Array.isArray(parsedResponse.entities)) {
-        throw new Error("Agent response missing 'entities' array");
-      }
-
-      if (!parsedResponse.explanation) {
-        throw new Error("Agent response missing 'explanation' field");
-      }
+      const parsedResponse = resultWithObject.object as {
+        entities: any[];
+        explanation: string;
+      };
 
       console.log(`✅ Schema generated successfully`);
       console.log(
