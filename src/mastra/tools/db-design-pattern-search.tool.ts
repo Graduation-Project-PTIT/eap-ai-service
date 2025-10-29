@@ -1,6 +1,12 @@
 import { createTool } from "@mastra/core";
 import { z } from "zod";
 import axios from "axios";
+import {
+  extractContentBatch,
+  formatAsMarkdown,
+  mergeResultsWithContent,
+  generateExtractionSummary,
+} from "./utils/content-extractor";
 
 /**
  * Database Design Pattern Search Tool
@@ -68,15 +74,14 @@ DO NOT use for:
   }),
 
   outputSchema: z.object({
-    results: z.array(
-      z.object({
-        title: z.string(),
-        snippet: z.string(),
-        link: z.string(),
-      })
-    ),
     searchQuery: z.string(),
     summary: z.string(),
+    fullContent: z.string().describe("Complete extracted content from all search results formatted as markdown"),
+    metadata: z.object({
+      totalResults: z.number(),
+      successfulExtractions: z.number(),
+      totalWords: z.number(),
+    }),
   }),
 
   execute: async ({ context }) => {
@@ -116,17 +121,45 @@ DO NOT use for:
         link: result.link,
       }));
 
-      // Create a summary of findings
-      const summary = `Found ${formattedResults.length} resources about ${pattern}. Review the design patterns and best practices from the results.`;
-
       console.log(
-        `✅ Pattern search completed: ${formattedResults.length} results`
+        `✅ Pattern search completed: ${formattedResults.length} results. Extracting full content...`
       );
 
+      // Phase 2: Extract full content from all URLs
+      const urls = formattedResults.map((r) => r.link);
+      const extractedContents = await extractContentBatch(urls);
+
+      // Merge search results with extracted content
+      const enhancedResults = mergeResultsWithContent(
+        formattedResults,
+        extractedContents
+      );
+
+      // Format as markdown for LLM consumption
+      const fullContent = formatAsMarkdown(searchQuery, enhancedResults);
+
+      // Generate summary
+      const summary = generateExtractionSummary(enhancedResults);
+
+      const successfulExtractions = enhancedResults.filter(
+        (r) => r.extractionStatus === "success"
+      ).length;
+      const totalWords = enhancedResults.reduce(
+        (sum, r) => sum + (r.wordCount || 0),
+        0
+      );
+
+      console.log(`✅ Content extraction completed: ${summary}`);
+
       return {
-        results: formattedResults,
         searchQuery,
         summary,
+        fullContent,
+        metadata: {
+          totalResults: formattedResults.length,
+          successfulExtractions,
+          totalWords,
+        },
       };
     } catch (error) {
       console.error("❌ Database pattern search failed:", error);
