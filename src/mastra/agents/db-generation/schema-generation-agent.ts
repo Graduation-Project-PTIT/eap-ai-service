@@ -16,8 +16,8 @@ import schemaGenerationPrompt from "./prompts/schema-generation-prompt";
  * - Conversation history for modifications
  * - Fast & cost-efficient
  */
-export const conversationalSchemaAgent = new Agent({
-  name: "conversationalSchemaAgent",
+export const schemaGenerationAgent = new Agent({
+  name: "schemaGenerationAgent",
   instructions: schemaGenerationPrompt,
   model: gemini25Flash,
 
@@ -43,4 +43,4 @@ export const conversationalSchemaAgent = new Agent({
   }),
 });
 
-export default conversationalSchemaAgent;
+export default schemaGenerationAgent;

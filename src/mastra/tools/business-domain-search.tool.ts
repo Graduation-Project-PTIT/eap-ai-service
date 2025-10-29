@@ -72,7 +72,11 @@ DO NOT use for:
   outputSchema: z.object({
     searchQuery: z.string(),
     summary: z.string(),
-    fullContent: z.string().describe("Complete extracted content from all search results formatted as markdown"),
+    fullContent: z
+      .string()
+      .describe(
+        "Complete extracted content from all search results formatted as markdown"
+      ),
     metadata: z.object({
       totalResults: z.number(),
       successfulExtractions: z.number(),
