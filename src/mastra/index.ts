@@ -8,6 +8,10 @@ import translatorAgent from "./agents/translator.agent";
 import { PinoLogger } from "@mastra/loggers";
 import { PostgresStore } from "@mastra/pg";
 import { AISDKExporter } from "langsmith/vercel";
+import {
+  massEvaluationStartRoute,
+  massEvaluationStatsRoute,
+} from "./routes/mass-evaluation.routes";
 
 // Configure storage based on environment
 const storage = process.env.DATABASE_URL
@@ -47,6 +51,8 @@ export const mastra = new Mastra({
       allowHeaders: ["*", "X-User-Token"], // Allow custom header
       credentials: true,
     },
+    // Register custom API routes for mass evaluation
+    apiRoutes: [massEvaluationStartRoute, massEvaluationStatsRoute],
   },
   telemetry: {
     serviceName: "eap-ai-service",

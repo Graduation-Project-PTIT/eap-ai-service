@@ -28,10 +28,12 @@
     "@mastra/pg": "^0.17.5",
     "ai": "^5.0.77",
     "axios": "^1.10.0",
+    "ioredis": "^5.8.2",
     "langsmith": "^0.3.67",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/ioredis": "^5.0.0",
     "@types/node": "^24.0.10",
     "mastra": "^0.17.3",
     "typescript": "^5.8.3"
