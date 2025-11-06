@@ -51,7 +51,7 @@ const schemaGenerationStep = createStep({
     console.log(`🔄 Processing schema generation request`);
     console.log(`🧵 Thread: ${inputData.threadId}`);
     console.log(`📦 Resource: ${inputData.resourceId}`);
-    console.log(`� Search enabled: ${inputData.enableSearch}`);
+    console.log(`🔍 Search enabled: ${inputData.enableSearch}`);
 
     const startTime = Date.now();
 
@@ -207,6 +207,101 @@ const schemaGenerationStep = createStep({
       console.log(
         `📋 Entities: ${parsedResponse.entities.map((e: any) => e.name).join(", ")}`
       );
+
+      // ===== STEP 7: Manually Save Schema to Working Memory =====
+      // Since we're using structured output (which conflicts with tool calling),
+      // we manually update working memory through thread metadata
+      try {
+        const agentMemory = await agent.getMemory();
+        if (agentMemory) {
+          // Format schema summary for working memory
+          const schemaDescription = parsedResponse.entities
+            .map((e: any) => `- **${e.name}**: ${e.attributes.length} attributes`)
+            .join("\n");
+
+          const workingMemoryContent = `# Current Database Schema
+
+## Schema Status
+- Status: complete
+- Last Modified: ${new Date().toISOString()}
+- Total Entities: ${parsedResponse.entities.length}
+
+## Entities
+${schemaDescription}
+
+## Recent Changes
+${parsedResponse.explanation}
+
+## Full Schema Data
+\`\`\`json
+${JSON.stringify(parsedResponse.entities, null, 2)}
+\`\`\`
+`;
+
+          // Create or get thread first
+          let thread = await agentMemory.getThreadById({
+            threadId: inputData.threadId,
+          });
+
+          // If thread doesn't exist, create it
+          if (!thread) {
+            thread = await agentMemory.createThread({
+              threadId: inputData.threadId,
+              resourceId: inputData.resourceId,
+              title: "Database Schema Design",
+              metadata: {
+                workingMemory: workingMemoryContent,
+              },
+            });
+            console.log(`📝 Created new thread with working memory`);
+          } else {
+            // Update existing thread's working memory via storage
+            const storage = (agentMemory as any).storage;
+            if (storage && storage.updateThread) {
+              await storage.updateThread({
+                id: inputData.threadId,
+                title: thread.title || "Database Schema Design",
+                metadata: {
+                  ...thread.metadata,
+                  workingMemory: workingMemoryContent,
+                },
+              });
+              console.log(`💾 Updated thread working memory successfully`);
+            }
+          }
+        }
+      } catch (memoryError) {
+        console.warn(
+          `⚠️  Failed to save schema to working memory:`,
+          memoryError
+        );
+        // Don't fail the workflow if memory save fails
+      }
+
+      // ===== STEP 8: Validate Working Memory Save =====
+      // Retrieve and print working memory to confirm it was saved
+      try {
+        const agentMemory = await agent.getMemory();
+        if (agentMemory) {
+          const workingMemory = await agentMemory.getWorkingMemory({
+            threadId: inputData.threadId,
+          });
+
+          if (workingMemory) {
+            console.log(`\n📝 === WORKING MEMORY CONTENT ===`);
+            console.log(workingMemory);
+            console.log(`=== END WORKING MEMORY ===\n`);
+          } else {
+            console.log(`⚠️  Working memory is empty after save attempt`);
+          }
+        }
+      } catch (memoryError) {
+        console.warn(
+          `⚠️  Failed to retrieve working memory for validation:`,
+          memoryError
+        );
+        // Don't fail the workflow if memory retrieval fails
+      }
 
       return {
         threadId: inputData.threadId,

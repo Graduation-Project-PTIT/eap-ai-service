@@ -32,9 +32,24 @@ export const schemaGenerationAgent = new Agent({
       // Keep conversation history for schema modifications
       lastMessages: 20,
 
-      // Working memory disabled (caused Gemini function call errors)
+      // ✅ Working memory ENABLED - automatically saves/retrieves schema
+      // This allows the agent to remember the current schema state
+      // and intelligently update it during modifications
       workingMemory: {
-        enabled: false,
+        enabled: true,
+        scope: "thread", // Memory isolated per conversation thread
+        template: `# Current Database Schema
+
+## Schema Status
+- Status: [empty | in-progress | complete]
+- Last Modified: [timestamp]
+
+## Entities
+[List of entity names and their key attributes will be tracked here]
+
+## Recent Changes
+[Brief description of the most recent schema modifications]
+`,
       },
 
       // Semantic recall disabled for in-memory setup
