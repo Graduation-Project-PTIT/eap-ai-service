@@ -30,7 +30,7 @@ export const schemaGenerationAgent = new Agent({
     }),
     options: {
       // Keep conversation history for schema modifications
-      lastMessages: 20,
+      lastMessages: 3,
 
       // ✅ Working memory ENABLED - automatically saves/retrieves schema
       // This allows the agent to remember the current schema state

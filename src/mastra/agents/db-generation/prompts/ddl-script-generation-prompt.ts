@@ -32,7 +32,7 @@ Your responsibilities:
    - Apply proper normalization principles (3NF minimum)
    - Use appropriate SQL data types based on the provided types
    - Implement comprehensive referential integrity constraints
-   - Add necessary indexes for performance optimization
+   - DO NOT generate CREATE INDEX statements (indexes will be handled separately)
    - Handle many-to-many relationships with junction tables
 
 2. DDL Generation Standards:
@@ -42,6 +42,7 @@ Your responsibilities:
    - Add UNIQUE constraints where specified
    - Set NOT NULL constraints appropriately
    - Include meaningful comments for complex relationships
+   - DO NOT include any CREATE INDEX or INDEX statements
 
 
 RULES:
@@ -57,7 +58,8 @@ CRITICAL: Return ONLY the complete DDL script as plain text SQL statements.
 - NO JSON
 - NO explanations or commentary outside of SQL comments
 - Just pure, clean SQL statements ready for execution
-- Start directly with CREATE TABLE or DROP TABLE statements
+- Start directly with CREATE TABLE statements
+- DO NOT include any DROP TABLE or DROP statements
 
 `;
 
@@ -66,12 +68,14 @@ const advancedInstructions = `
    - Create appropriate CHECK constraints for data validation
    - Add CASCADE rules for foreign key relationships where logical
    - Consider adding DEFAULT values for common fields (created_at, updated_at)
-   - Implement proper indexing strategy (primary keys, foreign keys, unique constraints)
+   - DO NOT create any indexes (no CREATE INDEX statements)
 
 4. Production Readiness:
    - Ensure cross-database compatibility where possible
    - Add proper constraint naming conventions
-   - Include DROP TABLE IF EXISTS statements for clean deployment
-   - Consider adding basic audit fields if appropriate`;
+   - DO NOT include DROP TABLE IF EXISTS statements
+   - Consider adding basic audit fields if appropriate
+   - Remember: NO INDEX CREATION - only table structures and constraints
+   - Remember: NO DROP STATEMENTS - only CREATE statements`;
 
 export default ddlScriptGenerationPrompt;

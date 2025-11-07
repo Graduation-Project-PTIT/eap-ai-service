@@ -18,7 +18,8 @@ import schemaGenerationPrompt from "../../../agents/db-generation/prompts/schema
  * 2. Summarize full content (80-90% compression)
  * 3. Pass summarized context + user message to LLM
  * 4. LLM returns structured output (Zod validated)
- * 5. No tool calling, single inference, fast & cheap
+ * 5. If entities array is empty → side question, skip memory update
+ * 6. If entities array has data → schema modification, update memory
  */
 const schemaGenerationStep = createStep({
   id: "schemaGenerationStep",
@@ -203,23 +204,36 @@ const schemaGenerationStep = createStep({
         throw new Error("Agent response missing entities array");
       }
 
-      console.log(`✅ Schema generated successfully`);
-      console.log(
-        `📋 Entities: ${parsedResponse.entities.map((e: any) => e.name).join(", ")}`
-      );
+      // ===== STEP 7: Detect Schema Modification by Checking Entities =====
+      // Simple and elegant: If agent returns empty entities, it's a side question
+      // If agent returns entities, it's a schema creation/modification
+      const hasSchemaData = parsedResponse.entities.length > 0;
 
-      // ===== STEP 7: Manually Save Schema to Working Memory =====
-      // Since we're using structured output (which conflicts with tool calling),
-      // we manually update working memory through thread metadata
-      try {
-        const agentMemory = await agent.getMemory();
-        if (agentMemory) {
-          // Format schema summary for working memory
-          const schemaDescription = parsedResponse.entities
-            .map((e: any) => `- **${e.name}**: ${e.attributes.length} attributes`)
-            .join("\n");
+      console.log(`✅ Schema response received`);
+      if (hasSchemaData) {
+        console.log(
+          `📋 Entities: ${parsedResponse.entities.map((e: any) => e.name).join(", ")}`
+        );
+        console.log(`🔍 Schema modification detected (entities present)`);
+      } else {
+        console.log(`💬 Side question detected (no entities returned)`);
+      }
 
-          const workingMemoryContent = `# Current Database Schema
+      // ===== STEP 8: Conditionally Save Schema to Working Memory =====
+      // Only update working memory if the response contains actual schema data
+      // This prevents side questions from overwriting the existing schema
+      if (hasSchemaData) {
+        try {
+          const agentMemory = await agent.getMemory();
+          if (agentMemory) {
+            // Format schema summary for working memory
+            const schemaDescription = parsedResponse.entities
+              .map(
+                (e: any) => `- **${e.name}**: ${e.attributes.length} attributes`
+              )
+              .join("\n");
+
+            const workingMemoryContent = `# Current Database Schema
 
 ## Schema Status
 - Status: complete
@@ -238,48 +252,56 @@ ${JSON.stringify(parsedResponse.entities, null, 2)}
 \`\`\`
 `;
 
-          // Create or get thread first
-          let thread = await agentMemory.getThreadById({
-            threadId: inputData.threadId,
-          });
-
-          // If thread doesn't exist, create it
-          if (!thread) {
-            thread = await agentMemory.createThread({
+            // Create or get thread first
+            let thread = await agentMemory.getThreadById({
               threadId: inputData.threadId,
-              resourceId: inputData.resourceId,
-              title: "Database Schema Design",
-              metadata: {
-                workingMemory: workingMemoryContent,
-              },
             });
-            console.log(`📝 Created new thread with working memory`);
-          } else {
-            // Update existing thread's working memory via storage
-            const storage = (agentMemory as any).storage;
-            if (storage && storage.updateThread) {
-              await storage.updateThread({
-                id: inputData.threadId,
-                title: thread.title || "Database Schema Design",
+
+            // If thread doesn't exist, create it
+            if (!thread) {
+              thread = await agentMemory.createThread({
+                threadId: inputData.threadId,
+                resourceId: inputData.resourceId,
+                title: "Database Schema Design",
                 metadata: {
-                  ...thread.metadata,
                   workingMemory: workingMemoryContent,
                 },
               });
-              console.log(`💾 Updated thread working memory successfully`);
+              console.log(`📝 Created new thread with working memory`);
+            } else {
+              // Update existing thread's working memory via storage
+              const storage = (agentMemory as any).storage;
+              if (storage && storage.updateThread) {
+                await storage.updateThread({
+                  id: inputData.threadId,
+                  title: thread.title || "Database Schema Design",
+                  metadata: {
+                    ...thread.metadata,
+                    workingMemory: workingMemoryContent,
+                  },
+                });
+                console.log(`💾 Updated thread working memory successfully`);
+              }
             }
           }
+        } catch (memoryError) {
+          console.warn(
+            `⚠️  Failed to save schema to working memory:`,
+            memoryError
+          );
+          // Don't fail the workflow if memory save fails
         }
-      } catch (memoryError) {
-        console.warn(
-          `⚠️  Failed to save schema to working memory:`,
-          memoryError
+      } else {
+        console.log(
+          `⏭️  Skipping working memory update - request was not schema-related`
         );
-        // Don't fail the workflow if memory save fails
+        console.log(
+          `   Existing schema in working memory is preserved for future modifications`
+        );
       }
 
-      // ===== STEP 8: Validate Working Memory Save =====
-      // Retrieve and print working memory to confirm it was saved
+      // ===== STEP 9: Validate Working Memory State =====
+      // Retrieve and print working memory to confirm current state
       try {
         const agentMemory = await agent.getMemory();
         if (agentMemory) {
@@ -291,8 +313,14 @@ ${JSON.stringify(parsedResponse.entities, null, 2)}
             console.log(`\n📝 === WORKING MEMORY CONTENT ===`);
             console.log(workingMemory);
             console.log(`=== END WORKING MEMORY ===\n`);
+
+            if (!hasSchemaData) {
+              console.log(
+                `ℹ️  Note: Working memory was NOT updated (preserved from previous state)`
+              );
+            }
           } else {
-            console.log(`⚠️  Working memory is empty after save attempt`);
+            console.log(`⚠️  Working memory is empty`);
           }
         }
       } catch (memoryError) {

@@ -30,9 +30,28 @@ const ddlGenerationStep = createStep({
       "ddlScriptGenerationAgent"
     );
 
-    console.log(`🔨 Generating DDL script`);
+    console.log(`🔨 DDL Generation Step`);
     console.log(`🧵 Thread ID: ${inputData.threadId}`);
 
+    // ===== STEP 1: Check if Schema is Empty (Side Question) =====
+    // If entities array is empty, this was a side question - skip DDL generation
+    if (
+      !inputData.updatedSchema.entities ||
+      inputData.updatedSchema.entities.length === 0
+    ) {
+      console.log(
+        `⏭️  Skipping DDL generation - no schema data (side question)`
+      );
+      return {
+        threadId: inputData.threadId,
+        resourceId: inputData.resourceId,
+        updatedSchema: inputData.updatedSchema,
+        ddlScript: "", // Empty DDL for side questions
+        agentResponse: inputData.agentResponse,
+      };
+    }
+
+    // ===== STEP 2: Generate DDL Script =====
     // Start performance timing
     const startTime = Date.now();
 
