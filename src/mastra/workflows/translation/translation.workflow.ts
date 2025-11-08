@@ -16,4 +16,3 @@ const translationWorkflow = createWorkflow({
   .commit();
 
 export default translationWorkflow;
-

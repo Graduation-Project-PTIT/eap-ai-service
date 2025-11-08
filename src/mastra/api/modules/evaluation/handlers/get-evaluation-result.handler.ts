@@ -1,17 +1,14 @@
-import { Context } from "hono";
-import { db } from "../../db";
-import { evaluationHistory } from "../../db/schema";
+import type { Context } from "hono";
+import { db } from "../../../db";
+import { evaluationHistory } from "../../../db/schema";
 import { eq } from "drizzle-orm";
-import { MESSAGE } from "../../constants/message";
+import { MESSAGE } from "../../../constants/message";
+import { EVALUATION_MODE } from "../../../constants/evaluation-type";
 import { getEvaluationWorkflowByMode } from "../utils/getEvaluationWorkflowMode";
-import { EVALUATION_MODE } from "../../constants/evaluation-type";
-import { SendFinishRefinementEvent } from "../types/send-finish-refinement-event.input";
 
-const sendFinishRefinementEvent = async (c: Context) => {
+const getEvaluationResult = async (c: Context) => {
   const user = c.get("user");
   const mastra = c.get("mastra");
-
-  const body = await c.req.json<SendFinishRefinementEvent>();
 
   const { evaluationId } = c.req.param();
 
@@ -35,15 +32,12 @@ const sendFinishRefinementEvent = async (c: Context) => {
     evaluation.workflowMode || EVALUATION_MODE.STANDARD,
     mastra
   );
-  const run = await workflow.createRunAsync({
-    runId: evaluation.workflowRunId,
-  });
 
-  run.sendEvent(body.event, {
-    extractedInformation: body.data.extractedInformation,
-  });
+  const executionResult = await workflow.getWorkflowRunExecutionResult(
+    evaluation.workflowRunId
+  );
 
-  return c.json({ success: true }, 200);
+  return c.json(executionResult, 200);
 };
 
-export default sendFinishRefinementEvent;
+export default getEvaluationResult;

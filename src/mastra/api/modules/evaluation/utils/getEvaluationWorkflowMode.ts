@@ -1,5 +1,5 @@
 import { Mastra, Workflow } from "@mastra/core";
-import { EVALUATION_MODE } from "../../constants/evaluation-type";
+import { EVALUATION_MODE } from "../../../constants/evaluation-type";
 
 export const getEvaluationWorkflowByMode = (
   mode: string,

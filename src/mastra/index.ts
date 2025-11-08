@@ -20,7 +20,7 @@ import evaluationRoutes, {
   getEvaluationRoute,
   getListEvaluationRoute,
   sendFinishRefinementEventRoute,
-} from "./api/evaluation/evaluation.route";
+} from "./api/modules/evaluation/evaluation.route";
 import loggingMiddleware from "./api/middlewares/logging.middileware";
 
 // Configure storage based on environment

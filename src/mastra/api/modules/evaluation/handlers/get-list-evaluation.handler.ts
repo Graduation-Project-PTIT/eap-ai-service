@@ -1,6 +1,6 @@
 import type { Context } from "hono";
-import { db } from "../../db";
-import { evaluationHistory } from "../../db/schema";
+import { db } from "../../../db";
+import { evaluationHistory } from "../../../db/schema";
 import { eq } from "drizzle-orm";
 
 const getListEvaluationHandler = async (c: Context) => {
