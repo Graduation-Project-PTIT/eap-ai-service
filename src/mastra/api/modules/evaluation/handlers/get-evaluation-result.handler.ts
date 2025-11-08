@@ -37,6 +37,13 @@ const getEvaluationResult = async (c: Context) => {
     evaluation.workflowRunId
   );
 
+  if (executionResult?.status === "success") {
+    await db
+      .update(evaluationHistory)
+      .set({ status: "completed" })
+      .where(eq(evaluationHistory.id, evaluationId));
+  }
+
   return c.json(executionResult, 200);
 };
 

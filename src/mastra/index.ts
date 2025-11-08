@@ -12,16 +12,11 @@ import {
   massEvaluationStatsRoute,
 } from "./api/mass-evaluation.routes";
 import authenticationMiddleware from "./api/middlewares/authentication.middleware";
+import loggingMiddleware from "./api/middlewares/logging.middileware";
 
 // Routes import
-import evaluationRoutes, {
-  createEvaluationRoute,
-  getEvaluationResultRoute,
-  getEvaluationRoute,
-  getListEvaluationRoute,
-  sendFinishRefinementEventRoute,
-} from "./api/modules/evaluation/evaluation.route";
-import loggingMiddleware from "./api/middlewares/logging.middileware";
+import evaluationRoutes from "./api/modules/evaluation/evaluation.route";
+import translationRoutes from "./api/modules/translation/translation.route";
 
 // Configure storage based on environment
 const storage = process.env.DATABASE_URL
@@ -64,11 +59,8 @@ export const mastra = new Mastra({
     middleware: [loggingMiddleware, authenticationMiddleware],
     apiRoutes: [
       // Evaluation routes
-      createEvaluationRoute,
-      getListEvaluationRoute,
-      getEvaluationRoute,
-      getEvaluationResultRoute,
-      sendFinishRefinementEventRoute,
+      ...evaluationRoutes,
+      ...translationRoutes,
 
       // Mass evaluation routes
       massEvaluationStartRoute,
