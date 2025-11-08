@@ -7,11 +7,21 @@ import erdEvaluationAgent from "./agents/erd-evaluation.agent";
 import translatorAgent from "./agents/translator.agent";
 import { PinoLogger } from "@mastra/loggers";
 import { PostgresStore } from "@mastra/pg";
-import { AISDKExporter } from "langsmith/vercel";
 import {
   massEvaluationStartRoute,
   massEvaluationStatsRoute,
-} from "./routes/mass-evaluation.routes";
+} from "./api/mass-evaluation.routes";
+import authenticationMiddleware from "./api/middlewares/authentication.middleware";
+
+// Routes import
+import evaluationRoutes, {
+  createEvaluationRoute,
+  getEvaluationResultRoute,
+  getEvaluationRoute,
+  getListEvaluationRoute,
+  sendFinishRefinementEventRoute,
+} from "./api/evaluation/evaluation.route";
+import loggingMiddleware from "./api/middlewares/logging.middileware";
 
 // Configure storage based on environment
 const storage = process.env.DATABASE_URL
@@ -51,15 +61,18 @@ export const mastra = new Mastra({
       allowHeaders: ["*", "X-User-Token"], // Allow custom header
       credentials: true,
     },
-    // Register custom API routes for mass evaluation
-    apiRoutes: [massEvaluationStartRoute, massEvaluationStatsRoute],
-  },
-  telemetry: {
-    serviceName: "eap-ai-service",
-    enabled: true,
-    export: {
-      type: "custom",
-      exporter: new AISDKExporter(),
-    },
+    middleware: [loggingMiddleware, authenticationMiddleware],
+    apiRoutes: [
+      // Evaluation routes
+      createEvaluationRoute,
+      getListEvaluationRoute,
+      getEvaluationRoute,
+      getEvaluationResultRoute,
+      sendFinishRefinementEventRoute,
+
+      // Mass evaluation routes
+      massEvaluationStartRoute,
+      massEvaluationStatsRoute,
+    ],
   },
 });
