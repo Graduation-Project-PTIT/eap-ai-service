@@ -25,12 +25,9 @@
     "@mastra/libsql": "^0.11.0",
     "@mastra/loggers": "^0.10.3",
     "@mastra/memory": "^0.11.1",
-    "@types/node-fetch": "^2.6.13",
     "axios": "^1.10.0",
     "dotenv": "^16.4.5",
     "langsmith": "^0.3.67",
-    "node-fetch": "^3.3.2",
-    "node-sql-parser": "^5.3.11",
     "zod": "^3.25.72"
   },
   "devDependencies": {
