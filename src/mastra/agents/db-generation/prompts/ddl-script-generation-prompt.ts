@@ -63,19 +63,4 @@ CRITICAL: Return ONLY the complete DDL script as plain text SQL statements.
 
 `;
 
-const advancedInstructions = `
-3. Advanced Constraints:
-   - Create appropriate CHECK constraints for data validation
-   - Add CASCADE rules for foreign key relationships where logical
-   - Consider adding DEFAULT values for common fields (created_at, updated_at)
-   - DO NOT create any indexes (no CREATE INDEX statements)
-
-4. Production Readiness:
-   - Ensure cross-database compatibility where possible
-   - Add proper constraint naming conventions
-   - DO NOT include DROP TABLE IF EXISTS statements
-   - Consider adding basic audit fields if appropriate
-   - Remember: NO INDEX CREATION - only table structures and constraints
-   - Remember: NO DROP STATEMENTS - only CREATE statements`;
-
 export default ddlScriptGenerationPrompt;

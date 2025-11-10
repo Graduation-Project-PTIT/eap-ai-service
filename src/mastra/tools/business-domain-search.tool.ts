@@ -6,7 +6,7 @@ import {
   formatAsMarkdown,
   mergeResultsWithContent,
   generateExtractionSummary,
-} from "./utils/content-extractor";
+} from "../utils/content-extractor";
 
 /**
  * Business Domain Search Tool

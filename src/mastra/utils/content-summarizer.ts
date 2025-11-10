@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core";
-import { gemini25FlashLite } from "../../../models/google";
+import { gemini25FlashLite } from "../models/google";
 
 /**
  * Content Summarizer

@@ -1,14 +1,10 @@
-import { createStep } from "@mastra/core";
+import { createStep, MastraStorage } from "@mastra/core";
 import z from "zod";
 import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
 import businessDomainSearchTool from "../../../tools/business-domain-search.tool";
 import dbDesignPatternSearchTool from "../../../tools/db-design-pattern-search.tool";
-import {
-  summarizeSearchResult,
-  formatSummarizedContext,
-  type SummarizedSearchResult,
-} from "../utils/content-summarizer";
 import schemaGenerationPrompt from "../../../agents/db-generation/prompts/schema-generation-prompt";
+import { SummarizedSearchResult, summarizeSearchResult, formatSummarizedContext } from "../../../utils/content-summarizer";
 
 /**
  * Conversational Schema Step (Optimized)
@@ -270,7 +266,8 @@ ${JSON.stringify(parsedResponse.entities, null, 2)}
               console.log(`📝 Created new thread with working memory`);
             } else {
               // Update existing thread's working memory via storage
-              const storage = (agentMemory as any).storage;
+              const storage = (agentMemory as unknown as { storage?: MastraStorage })
+                .storage;
               if (storage && storage.updateThread) {
                 await storage.updateThread({
                   id: inputData.threadId,
