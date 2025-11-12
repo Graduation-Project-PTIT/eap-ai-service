@@ -9,6 +9,11 @@ const verifier = CognitoJwtVerifier.create({
 });
 
 const authenticationMiddleware = async (c: Context, next: Next) => {
+  if (c.req.path === "/health") {
+    await next();
+    return;
+  }
+
   const authHeader = c.req.header("Authorization");
 
   if (!authHeader) {
