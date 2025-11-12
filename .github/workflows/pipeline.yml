@@ -40,6 +40,19 @@ jobs:
           # Push the image
           docker push $EVALUATION_SERVICE_IMAGE
 
+      - name: Build and push Migration Docker image to GHCR
+        run: |
+          # Define the full image name for GHCR
+          MIGRATION_IMAGE="ghcr.io/$OWNER_LC/eap-evaluation-service-migrate:main"
+          MIGRATION_IMAGE_SHA="ghcr.io/$OWNER_LC/eap-evaluation-service-migrate:${{ github.sha }}"
+
+          # Build the migration image
+          docker build -f Dockerfile.migrate -t $MIGRATION_IMAGE -t $MIGRATION_IMAGE_SHA .
+
+          # Push both tags
+          docker push $MIGRATION_IMAGE
+          docker push $MIGRATION_IMAGE_SHA
+
       - name: Send repository dispatch event
         env:
           GH_TOKEN: ${{ secrets.GHCR_PAT }}

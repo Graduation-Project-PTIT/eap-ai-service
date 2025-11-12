@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1
+
+# Dockerfile for Database Migration Job
+# This image is used to run database migrations in Kubernetes before the application starts.
+# It's optimized to be lightweight and contains only the necessary files for migrations.
+
+ARG NODE_VERSION=20.17.0
+ARG PNPM_VERSION=9.14.4
+
+################################################################################
+# Use node image for base image for all stages.
+FROM node:${NODE_VERSION}-alpine as base
+
+# Set working directory for all build stages.
+WORKDIR /usr/src/app
+
+# Install pnpm.
+RUN --mount=type=cache,target=/root/.npm \
+    npm install -g pnpm@${PNPM_VERSION}
+
+################################################################################
+# Create a stage for installing dependencies (including devDependencies for tsx).
+FROM base as deps
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install all dependencies (including devDependencies for tsx and drizzle-kit)
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+################################################################################
+# Create final migration image
+FROM base as final
+
+# Use production node environment by default.
+ENV NODE_ENV production
+
+# Copy package.json for pnpm commands
+COPY package.json ./
+
+# Copy all dependencies from deps stage
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+
+# Copy migration-related files
+COPY drizzle.config.ts ./
+COPY tsconfig.json ./
+COPY scripts/migrate.ts ./scripts/
+COPY src/mastra/api/db ./src/mastra/api/db
+
+# Run as non-root user for security
+USER node
+
+# Run migration script
+CMD ["pnpm", "run", "migrate"]
+
