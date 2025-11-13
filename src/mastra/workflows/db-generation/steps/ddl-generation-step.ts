@@ -15,6 +15,14 @@ const ddlGenerationStep = createStep({
     resourceId: z.string(),
     updatedSchema: erdInformationGenerationSchema,
     agentResponse: z.string(),
+    searchMetadata: z
+      .object({
+        searchPerformed: z.boolean(),
+        businessSearchTokens: z.number().optional(),
+        patternSearchTokens: z.number().optional(),
+        totalCompressionRatio: z.number().optional(),
+      })
+      .optional(),
   }),
 
   outputSchema: z.object({

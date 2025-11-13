@@ -1,8 +1,8 @@
 import { createWorkflow } from "@mastra/core";
 import z from "zod";
 import erdInformationGenerationSchema from "../../../schemas/erdInformationGenerationSchema";
-import conversationalSchemaStep from "./steps/schema-generation-step";
-import conversationalDdlGenerationStep from "./steps/ddl-generation-step";
+import schemaGenerationStep from "./steps/schema-generation-step";
+import ddlGenerationStep from "./steps/ddl-generation-step";
 
 /**
  * Unified Conversational Design Workflow
@@ -53,11 +53,11 @@ const dbGenerationWorkflow = createWorkflow({
   }),
 })
   // Step 1: Schema Generation/Modification
-  .then(conversationalSchemaStep)
+  .then(schemaGenerationStep)
 
   // Step 2: DDL Script Generation
-  .then(conversationalDdlGenerationStep)
+  .then(ddlGenerationStep)
 
   .commit();
-
+  
 export default dbGenerationWorkflow;
