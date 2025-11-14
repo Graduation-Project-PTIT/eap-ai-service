@@ -21,39 +21,13 @@ export const schemaGenerationAgent = new Agent({
   instructions: schemaGenerationPrompt,
   model: gemini25Flash,
 
-  // 🚫 NO TOOLS - Backend handles all searches
-  // Tools removed to enable structured output without conflicts
-
   memory: new Memory({
     storage: new LibSQLStore({
       url: ":memory:",
     }),
     options: {
       // Keep conversation history for schema modifications
-      lastMessages: 3,
-
-      // ✅ Working memory ENABLED - automatically saves/retrieves schema
-      // This allows the agent to remember the current schema state
-      // and intelligently update it during modifications
-      workingMemory: {
-        enabled: true,
-        scope: "thread", // Memory isolated per conversation thread
-        template: `# Current Database Schema
-
-## Schema Status
-- Status: [empty | in-progress | complete]
-- Last Modified: [timestamp]
-
-## Entities
-[List of entity names and their key attributes will be tracked here]
-
-## Recent Changes
-[Brief description of the most recent schema modifications]
-`,
-      },
-
-      // Semantic recall disabled for in-memory setup
-      semanticRecall: false,
+      lastMessages: 20,
     },
   }),
 });

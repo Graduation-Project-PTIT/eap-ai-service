@@ -78,12 +78,6 @@ const ddlGenerationStep = createStep({
           ],
         },
       ],
-      {
-        memory: {
-          resource: inputData.resourceId,
-          thread: inputData.threadId,
-        },
-      }
     );
 
     const duration = Date.now() - startTime;
