@@ -1,10 +1,5 @@
+import "dotenv/config";
 import { Mastra } from "@mastra/core/mastra";
-import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
-import evaluationSyncWorkflow from "./workflows/evaluation/evaluation-sync.workflow";
-import translationWorkflow from "./workflows/translation/translation.workflow";
-import erdInformationExtractAgent from "./agents/erd-information-extract.agent";
-import erdEvaluationAgent from "./agents/erd-evaluation.agent";
-import translatorAgent from "./agents/translator.agent";
 import { PinoLogger } from "@mastra/loggers";
 import { PostgresStore } from "@mastra/pg";
 import {
@@ -17,6 +12,24 @@ import loggingMiddleware from "./api/middlewares/logging.middileware";
 // Routes import
 import evaluationRoutes from "./api/modules/evaluation/evaluation.route";
 import translationRoutes from "./api/modules/translation/translation.route";
+import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
+
+// Workflow import
+import evaluationSyncWorkflow from "./workflows/evaluation/evaluation-sync.workflow";
+import translationWorkflow from "./workflows/translation/translation.workflow";
+import dbGenerationWorkflow from "./workflows/db-generation/db-generation.workflow";
+
+// Agent import
+import erdInformationExtractAgent from "./agents/evaluation/erd-information-extract.agent";
+import erdEvaluationAgent from "./agents/evaluation/erd-evaluation.agent";
+import translatorAgent from "./agents/evaluation/translator.agent";
+import ddlScriptGenerationAgent from "./agents/db-generation/ddl-script-generation-agent";
+import schemaGenerationAgent from "./agents/db-generation/schema-generation-agent";
+import {
+  chatRoute,
+  getConversationRoute,
+  resetConversationRoute,
+} from "../api/api-routes";
 
 // Configure storage based on environment
 const storage = process.env.DATABASE_URL
@@ -33,22 +46,29 @@ const storage = process.env.DATABASE_URL
 
 export const mastra = new Mastra({
   workflows: {
+    // Evaluation workflows
     evaluationWorkflow,
     evaluationSyncWorkflow,
     translationWorkflow,
+    // Database generation workflows
+    dbGenerationWorkflow,
   },
   agents: {
+    // Evaluation agents
     erdInformationExtractAgent,
     erdEvaluationAgent,
     translatorAgent,
+    // Database generation agents
+    ddlScriptGenerationAgent,
+    schemaGenerationAgent,
   },
   storage,
   logger: new PinoLogger({
-    name: "Mastra",
-    level: "info",
+    name: "EAP AI Service",
+    level: (process.env.MASTRA_LOG_LEVEL as any) || "info",
   }),
   server: {
-    port: parseInt(process.env.PORT || "4111"), // Default port for evaluation service
+    port: parseInt(process.env.PORT || "4111"),
     timeout: 300000, // 5 minutes for AI processing
     cors: {
       origin: ["*"],
@@ -56,6 +76,7 @@ export const mastra = new Mastra({
       allowHeaders: ["*", "X-User-Token"], // Allow custom header
       credentials: true,
     },
+    // Register custom API routes for database generation
     middleware: [loggingMiddleware, authenticationMiddleware],
     apiRoutes: [
       // Evaluation routes
@@ -65,6 +86,10 @@ export const mastra = new Mastra({
       // Mass evaluation routes
       massEvaluationStartRoute,
       massEvaluationStatsRoute,
+
+      chatRoute,
+      getConversationRoute,
+      resetConversationRoute,
     ],
   },
 });

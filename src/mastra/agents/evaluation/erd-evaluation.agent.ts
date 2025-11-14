@@ -1,7 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import erdEvaluationPrompt from "./prompts/erd-evaluation.prompt";
-import { gemini25FlashLite } from "../models/google";
-// import { claudeSonnet45 } from "../models/anthropic";
+import { gemini25FlashLite } from "../../models/google";
 
 const erdEvaluationAgent = new Agent({
   name: "erdEvaluationAgent",
