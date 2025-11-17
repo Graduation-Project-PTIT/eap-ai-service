@@ -15,6 +15,13 @@
       "when": 1762587284964,
       "tag": "0001_init_translation_history",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763364760781,
+      "tag": "0002_init_mass_evaluation",
+      "breakpoints": true
     }
   ]
 }

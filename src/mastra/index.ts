@@ -2,16 +2,13 @@ import "dotenv/config";
 import { Mastra } from "@mastra/core/mastra";
 import { PinoLogger } from "@mastra/loggers";
 import { PostgresStore } from "@mastra/pg";
-import {
-  massEvaluationStartRoute,
-  massEvaluationStatsRoute,
-} from "./api/mass-evaluation.routes";
 import authenticationMiddleware from "./api/middlewares/authentication.middleware";
 import loggingMiddleware from "./api/middlewares/logging.middileware";
 
 // Routes import
 import evaluationRoutes from "./api/modules/evaluation/evaluation.route";
 import translationRoutes from "./api/modules/translation/translation.route";
+import massEvaluationRoutes from "./api/modules/mass-evaluation/mass-evaluation.route";
 import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
 
 // Workflow import
@@ -84,8 +81,7 @@ export const mastra = new Mastra({
       ...translationRoutes,
 
       // Mass evaluation routes
-      massEvaluationStartRoute,
-      massEvaluationStatsRoute,
+      ...massEvaluationRoutes,
 
       chatRoute,
       getConversationRoute,

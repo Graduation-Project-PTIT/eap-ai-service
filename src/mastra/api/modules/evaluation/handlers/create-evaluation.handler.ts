@@ -23,10 +23,13 @@ const crateEvaluationHandler = async (c: Context) => {
 
   const run = await workflow.createRunAsync();
 
+  const hostname = process.env.HOSTNAME || "http://localhost";
+  const fileUrl = `${hostname}/api/files/${validatedInput.fileKey}/render`;
+
   run.start({
     inputData: {
       questionDescription: validatedInput.questionDescription,
-      erdImage: validatedInput.erdImageUrl, // Workflow expects 'erdImage' field
+      erdImage: fileUrl,
       userToken: c.req.header("Authorization")?.replace("Bearer ", ""),
       preferredFormat: validatedInput.preferredFormat,
     },

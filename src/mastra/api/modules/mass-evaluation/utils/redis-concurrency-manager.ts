@@ -150,11 +150,33 @@ class RedisConcurrencyManager {
   async getStats(): Promise<{ active: number; queued: number; max: number }> {
     const active = await this.redis.scard(this.ACTIVE_KEY);
     const queued = await this.redis.llen(this.QUEUE_KEY);
-    
+
     return {
       active,
       queued,
       max: this.maxConcurrent,
+    };
+  }
+
+  /**
+   * Clear all active slots and queued tasks
+   * WARNING: This will reset all concurrency state
+   */
+  async clearAll(): Promise<{ cleared: { active: number; queued: number } }> {
+    const activeBefore = await this.redis.scard(this.ACTIVE_KEY);
+    const queuedBefore = await this.redis.llen(this.QUEUE_KEY);
+
+    // Delete active set and queue
+    await this.redis.del(this.ACTIVE_KEY);
+    await this.redis.del(this.QUEUE_KEY);
+
+    console.log(`Cleared ${activeBefore} active slots and ${queuedBefore} queued tasks`);
+
+    return {
+      cleared: {
+        active: activeBefore,
+        queued: queuedBefore,
+      },
     };
   }
 }
