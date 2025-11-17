@@ -8,11 +8,11 @@ const verifier = CognitoJwtVerifier.create({
   clientId: process.env.COGNITO_CLIENT_ID!,
 });
 
-const requiredAuthRoutes = ["/evaluations", "/mass-evaluation"];
+const requiredAuthRoutes = ["/ai/evaluations", "/ai/mass-evaluation"];
 const excludedRoutes = [
   "/health",
-  "/mass-evaluation/stats",
-  "/mass-evaluation/clear-slots",
+  "/ai/mass-evaluation/stats",
+  "/ai/mass-evaluation/clear-slots",
 ];
 
 const authenticationMiddleware = async (c: Context, next: Next) => {

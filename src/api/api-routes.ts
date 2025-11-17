@@ -31,7 +31,7 @@ import { memory } from "../mastra/memory";
  *   "ddl": "string"
  * }
  */
-export const chatRoute = registerApiRoute("/chat", {
+export const chatRoute = registerApiRoute("/ai/chat", {
   method: "POST",
   handler: async (c) => {
     try {
@@ -166,75 +166,78 @@ export const chatRoute = registerApiRoute("/chat", {
  *   "messageCount": number
  * }
  */
-export const getConversationRoute = registerApiRoute("/chat/:conversationId", {
-  method: "GET",
-  handler: async (c) => {
-    try {
-      const conversationId = c.req.param("conversationId");
+export const getConversationRoute = registerApiRoute(
+  "/ai/chat/:conversationId",
+  {
+    method: "GET",
+    handler: async (c) => {
+      try {
+        const conversationId = c.req.param("conversationId");
 
-      if (!conversationId) {
-        return c.json(
-          {
-            error: "conversationId is required",
-          },
-          400
-        );
-      }
+        if (!conversationId) {
+          return c.json(
+            {
+              error: "conversationId is required",
+            },
+            400
+          );
+        }
 
-      console.log(`📖 Getting conversation: ${conversationId}`);
+        console.log(`📖 Getting conversation: ${conversationId}`);
 
-      // Get thread from memory
-      const thread = await memory.getThreadById({ threadId: conversationId });
+        // Get thread from memory
+        const thread = await memory.getThreadById({ threadId: conversationId });
 
-      if (!thread) {
+        if (!thread) {
+          return c.json({
+            success: true,
+            conversationId,
+            exists: false,
+            schema: null,
+            message: "No conversation found",
+          });
+        }
+
+        // Extract schema from working memory if available
+        const workingMem = thread.metadata?.workingMemory as string | undefined;
+        let schema = null;
+
+        // Try to parse schema from working memory
+        if (workingMem) {
+          const jsonMatch = workingMem.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+          if (jsonMatch) {
+            try {
+              schema = JSON.parse(jsonMatch[1]);
+            } catch (e) {
+              console.warn("Failed to parse schema from working memory");
+            }
+          }
+        }
+
         return c.json({
           success: true,
           conversationId,
-          exists: false,
-          schema: null,
-          message: "No conversation found",
+          exists: true,
+          schema,
+          thread: {
+            title: thread.title,
+            createdAt: thread.createdAt,
+            updatedAt: thread.updatedAt,
+          },
         });
+      } catch (error: any) {
+        console.error("❌ Error getting conversation:", error);
+        return c.json(
+          {
+            error: "Internal server error",
+            message: error.message,
+          },
+          500
+        );
       }
-
-      // Extract schema from working memory if available
-      const workingMem = thread.metadata?.workingMemory as string | undefined;
-      let schema = null;
-
-      // Try to parse schema from working memory
-      if (workingMem) {
-        const jsonMatch = workingMem.match(/```json\s*(\{[\s\S]*?\})\s*```/);
-        if (jsonMatch) {
-          try {
-            schema = JSON.parse(jsonMatch[1]);
-          } catch (e) {
-            console.warn("Failed to parse schema from working memory");
-          }
-        }
-      }
-
-      return c.json({
-        success: true,
-        conversationId,
-        exists: true,
-        schema,
-        thread: {
-          title: thread.title,
-          createdAt: thread.createdAt,
-          updatedAt: thread.updatedAt,
-        },
-      });
-    } catch (error: any) {
-      console.error("❌ Error getting conversation:", error);
-      return c.json(
-        {
-          error: "Internal server error",
-          message: error.message,
-        },
-        500
-      );
-    }
-  },
-});
+    },
+  }
+);
 
 /**
  * POST /chat/reset
@@ -253,7 +256,7 @@ export const getConversationRoute = registerApiRoute("/chat/:conversationId", {
  *   "message": "Conversation reset successfully"
  * }
  */
-export const resetConversationRoute = registerApiRoute("/chat/reset", {
+export const resetConversationRoute = registerApiRoute("/ai/chat/reset", {
   method: "POST",
   handler: async (c) => {
     try {

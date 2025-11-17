@@ -34,7 +34,7 @@ const getEvaluationResult = async (c: Context) => {
   );
 
   const executionResult = await workflow.getWorkflowRunExecutionResult(
-    evaluation.workflowRunId
+    evaluation.workflowRunId!
   );
 
   if (executionResult?.status === "success" && executionResult?.result) {

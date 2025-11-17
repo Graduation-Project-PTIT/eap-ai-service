@@ -5,18 +5,18 @@ import getEvaluationResult from "./handlers/get-evaluation-result.handler";
 import sendFinishRefinementEvent from "./handlers/send-finish-refinement-event.handler";
 import getListEvaluationHandler from "./handlers/get-list-evaluation.handler";
 
-export const createEvaluationRoute = registerApiRoute("/evaluations", {
+export const createEvaluationRoute = registerApiRoute("/ai/evaluations", {
   method: "POST",
   handler: crateEvaluationHandler,
 });
 
-export const getListEvaluationRoute = registerApiRoute("/evaluations", {
+export const getListEvaluationRoute = registerApiRoute("/ai/evaluations", {
   method: "GET",
   handler: getListEvaluationHandler,
 });
 
 export const getEvaluationRoute = registerApiRoute(
-  "/evaluations/:evaluationId",
+  "/ai/evaluations/:evaluationId",
   {
     method: "GET",
     handler: getEvaluationHandler,
@@ -24,7 +24,7 @@ export const getEvaluationRoute = registerApiRoute(
 );
 
 export const getEvaluationResultRoute = registerApiRoute(
-  "/evaluations/:evaluationId/result",
+  "/ai/evaluations/:evaluationId/result",
   {
     method: "GET",
     handler: getEvaluationResult,
@@ -32,7 +32,7 @@ export const getEvaluationResultRoute = registerApiRoute(
 );
 
 export const sendFinishRefinementEventRoute = registerApiRoute(
-  "/evaluations/:evaluationId/finish-refinement",
+  "/ai/evaluations/:evaluationId/finish-refinement",
   {
     method: "POST",
     handler: sendFinishRefinementEvent,

@@ -3,7 +3,7 @@ import startTranslationHandler from "./handlers/start-translation.handler";
 import getTranslationResultHandler from "./handlers/get-translation-result.handler";
 
 const startTranslationRoute = registerApiRoute(
-  "/evaluations/:evaluationId/translation",
+  "/ai/evaluations/:evaluationId/translation",
   {
     method: "POST",
     handler: startTranslationHandler,
@@ -11,7 +11,7 @@ const startTranslationRoute = registerApiRoute(
 );
 
 const getTranslationResultRoute = registerApiRoute(
-  "/evaluations/:evaluationId/translation/result",
+  "/ai/evaluations/:evaluationId/translation/result",
   {
     method: "GET",
     handler: getTranslationResultHandler,

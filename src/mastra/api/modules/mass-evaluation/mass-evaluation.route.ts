@@ -7,7 +7,7 @@ import clearSlotsHandler from "./handlers/clear-slots.handler";
 import getStatsHandler from "./handlers/get-slots-stats.handler";
 
 export const createMassEvaluationBatchRoute = registerApiRoute(
-  "/mass-evaluation/batches",
+  "/ai/mass-evaluation/batches",
   {
     method: "POST",
     handler: createBatchHandler,
@@ -15,7 +15,7 @@ export const createMassEvaluationBatchRoute = registerApiRoute(
 );
 
 export const getMassEvaluationBatchesRoute = registerApiRoute(
-  "/mass-evaluation/batches",
+  "/ai/mass-evaluation/batches",
   {
     method: "GET",
     handler: getBatchesHandler,
@@ -23,7 +23,7 @@ export const getMassEvaluationBatchesRoute = registerApiRoute(
 );
 
 export const getBatchTasksRoute = registerApiRoute(
-  "/mass-evaluation/batches/:batchId/tasks",
+  "/ai/mass-evaluation/batches/:batchId/tasks",
   {
     method: "GET",
     handler: getBatchTasksHandler,
@@ -31,20 +31,20 @@ export const getBatchTasksRoute = registerApiRoute(
 );
 
 export const getBatchRoute = registerApiRoute(
-  "/mass-evaluation/batches/:batchId",
+  "/ai/mass-evaluation/batches/:batchId",
   {
     method: "GET",
     handler: getBatchHandler,
   }
 );
 
-export const getStatsRoute = registerApiRoute("/mass-evaluation/stats", {
+export const getStatsRoute = registerApiRoute("/ai/mass-evaluation/stats", {
   method: "GET",
   handler: getStatsHandler,
 });
 
 export const clearSlotsRoute = registerApiRoute(
-  "/mass-evaluation/clear-slots",
+  "/ai/mass-evaluation/clear-slots",
   {
     method: "GET",
     handler: clearSlotsHandler,

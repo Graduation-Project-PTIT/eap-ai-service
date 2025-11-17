@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { db } from "../../../db";
 import { evaluationHistory } from "../../../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 const getListEvaluationHandler = async (c: Context) => {
   const user = c.get("user");
@@ -9,7 +9,12 @@ const getListEvaluationHandler = async (c: Context) => {
   const evaluations = await db
     .select()
     .from(evaluationHistory)
-    .where(eq(evaluationHistory.userId, user.sub));
+    .where(
+      and(
+        eq(evaluationHistory.userId, user.sub),
+        isNull(evaluationHistory.batchId)
+      )
+    );
 
   return c.json(evaluations);
 };
