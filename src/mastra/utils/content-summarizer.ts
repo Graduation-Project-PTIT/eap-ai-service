@@ -18,11 +18,7 @@ const summarizerAgent = new Agent({
 
 export interface SummarizedSearchResult {
   originalQuery: string;
-  keyPoints: string[];
-  entities: string[];
-  relationships: string[];
-  recommendations: string[];
-  condensedText: string;
+  condensedText: string; // Plain text summary
   originalWords: number;
   summarizedWords: number;
   compressionRatio: number;
@@ -42,10 +38,6 @@ export async function summarizeSearchResult(
   if (originalWords < 1000) {
     return {
       originalQuery: searchQuery,
-      keyPoints: [],
-      entities: [],
-      relationships: [],
-      recommendations: [],
       condensedText: fullContent,
       originalWords,
       summarizedWords: originalWords,
@@ -64,32 +56,9 @@ export async function summarizeSearchResult(
 
   try {
     const result = await summarizerAgent.generate(prompt);
+    const summary = result.text.trim();
 
-    const summary = result.text;
-
-    // Try to parse as JSON
-    let parsed: any;
-    try {
-      parsed = JSON.parse(summary);
-    } catch {
-      // Fallback: return raw summary
-      const summarizedWords = summary.split(/\s+/).filter(Boolean).length;
-      return {
-        originalQuery: searchQuery,
-        keyPoints: [],
-        entities: [],
-        relationships: [],
-        recommendations: [],
-        condensedText: summary,
-        originalWords,
-        summarizedWords,
-        compressionRatio: summarizedWords / originalWords,
-      };
-    }
-
-    const summarizedWords = JSON.stringify(parsed)
-      .split(/\s+/)
-      .filter(Boolean).length;
+    const summarizedWords = summary.split(/\s+/).filter(Boolean).length;
     const compressionRatio = summarizedWords / originalWords;
 
     console.log(
@@ -98,11 +67,7 @@ export async function summarizeSearchResult(
 
     return {
       originalQuery: searchQuery,
-      keyPoints: parsed.keyPoints || [],
-      entities: parsed.entities || [],
-      relationships: parsed.relationships || [],
-      recommendations: parsed.recommendations || [],
-      condensedText: parsed.summary || summary,
+      condensedText: summary,
       originalWords,
       summarizedWords,
       compressionRatio,
@@ -114,10 +79,6 @@ export async function summarizeSearchResult(
     const truncated = fullContent.substring(0, 2000);
     return {
       originalQuery: searchQuery,
-      keyPoints: [],
-      entities: [],
-      relationships: [],
-      recommendations: [],
       condensedText:
         truncated + "\n\n[Content truncated due to summarization failure]",
       originalWords,
@@ -128,7 +89,7 @@ export async function summarizeSearchResult(
 }
 
 /**
- * Create prompt for business domain summarization
+ * Create prompt for business domain summarization - plain text output
  */
 function createBusinessSummaryPrompt(query: string, content: string): string {
   return `You are analyzing business domain documentation for database schema design.
@@ -138,44 +99,22 @@ Search Query: "${query}"
 Full Content:
 ${content}
 
-Extract ONLY database-relevant information. Return a JSON object:
+Extract and summarize ONLY database-relevant information in plain text format. Write a concise summary covering:
 
-{
-  "keyPoints": [
-    "Most important insight 1",
-    "Most important insight 2",
-    "Most important insight 3"
-  ],
-  "entities": [
-    "EntityName1: brief description",
-    "EntityName2: brief description"
-  ],
-  "relationships": [
-    "Entity1 relationship with Entity2",
-    "Entity2 relationship with Entity3"
-  ],
-  "recommendations": [
-    "Design recommendation 1",
-    "Design recommendation 2"
-  ],
-  "summary": "2-3 sentence overview of key database design insights"
-}
+1. Main entities/tables needed
+2. Key relationships between entities
+3. Important business rules affecting schema
+4. Domain-specific best practices
 
-Focus on:
-- Main entities (tables) needed
-- Relationships between entities
-- Business rules affecting schema design
-- Domain-specific best practices
+Format as clear, concise paragraphs. Focus on actionable schema design insights.
 
-Ignore:
-- Marketing content
-- Navigation elements
-- Code examples in other languages
-- General theory without practical schema implications`;
+Ignore marketing content, navigation, code examples in other languages, and general theory.
+
+Keep the summary under 500 words while preserving all critical database design information.`;
 }
 
 /**
- * Create prompt for technical pattern summarization
+ * Create prompt for technical pattern summarization - plain text output
  */
 function createPatternSummaryPrompt(query: string, content: string): string {
   return `You are analyzing technical database design pattern documentation.
@@ -185,41 +124,19 @@ Search Query: "${query}"
 Full Content:
 ${content}
 
-Extract ONLY actionable schema design information. Return a JSON object:
+Extract and summarize ONLY actionable schema design information in plain text format. Write a concise summary covering:
 
-{
-  "keyPoints": [
-    "Most important technical insight 1",
-    "Most important technical insight 2",
-    "Most important technical insight 3"
-  ],
-  "entities": [
-    "TableName1: purpose and structure",
-    "TableName2: purpose and structure"
-  ],
-  "relationships": [
-    "How to implement relationship X",
-    "Column structure for pattern Y"
-  ],
-  "recommendations": [
-    "SQL best practice 1",
-    "Implementation guideline 2"
-  ],
-  "summary": "2-3 sentence technical summary of the pattern implementation"
-}
+1. SQL table structures and column definitions
+2. Relationship modeling techniques
+3. Performance considerations
+4. Implementation guidelines and best practices
+5. Common pitfalls to avoid
 
-Focus on:
-- SQL table structures
-- Column definitions and constraints
-- Relationship modeling techniques
-- Performance considerations
-- Common pitfalls to avoid
+Format as clear, concise paragraphs. Focus on practical implementation details.
 
-Ignore:
-- ORM code examples
-- Programming language specifics
-- Theoretical explanations without schema impact
-- Non-SQL database solutions`;
+Ignore ORM code examples, programming language specifics, theoretical explanations without schema impact, and non-SQL database solutions.
+
+Keep the summary under 500 words while preserving all critical technical details.`;
 }
 
 /**
@@ -239,80 +156,14 @@ export function formatSummarizedContext(
 
   if (businessSummary) {
     context += "### 🏢 Business Domain Insights\n\n";
-
-    if (businessSummary.keyPoints.length > 0) {
-      context += "**Key Points:**\n";
-      businessSummary.keyPoints.forEach((point) => {
-        context += `- ${point}\n`;
-      });
-      context += "\n";
-    }
-
-    if (businessSummary.entities.length > 0) {
-      context += "**Suggested Entities:**\n";
-      businessSummary.entities.forEach((entity) => {
-        context += `- ${entity}\n`;
-      });
-      context += "\n";
-    }
-
-    if (businessSummary.relationships.length > 0) {
-      context += "**Relationships:**\n";
-      businessSummary.relationships.forEach((rel) => {
-        context += `- ${rel}\n`;
-      });
-      context += "\n";
-    }
-
-    if (businessSummary.recommendations.length > 0) {
-      context += "**Recommendations:**\n";
-      businessSummary.recommendations.forEach((rec) => {
-        context += `- ${rec}\n`;
-      });
-      context += "\n";
-    }
-
-    context += `**Summary:** ${businessSummary.condensedText}\n\n`;
+    context += businessSummary.condensedText + "\n\n";
     context += `*Compressed: ${businessSummary.originalWords.toLocaleString()} → ${businessSummary.summarizedWords.toLocaleString()} words (${(businessSummary.compressionRatio * 100).toFixed(0)}% of original)*\n\n`;
     context += "---\n\n";
   }
 
   if (patternSummary) {
     context += "### 🔧 Technical Pattern Guidance\n\n";
-
-    if (patternSummary.keyPoints.length > 0) {
-      context += "**Key Points:**\n";
-      patternSummary.keyPoints.forEach((point) => {
-        context += `- ${point}\n`;
-      });
-      context += "\n";
-    }
-
-    if (patternSummary.entities.length > 0) {
-      context += "**Required Tables:**\n";
-      patternSummary.entities.forEach((entity) => {
-        context += `- ${entity}\n`;
-      });
-      context += "\n";
-    }
-
-    if (patternSummary.relationships.length > 0) {
-      context += "**Implementation Details:**\n";
-      patternSummary.relationships.forEach((rel) => {
-        context += `- ${rel}\n`;
-      });
-      context += "\n";
-    }
-
-    if (patternSummary.recommendations.length > 0) {
-      context += "**Best Practices:**\n";
-      patternSummary.recommendations.forEach((rec) => {
-        context += `- ${rec}\n`;
-      });
-      context += "\n";
-    }
-
-    context += `**Summary:** ${patternSummary.condensedText}\n\n`;
+    context += patternSummary.condensedText + "\n\n";
     context += `*Compressed: ${patternSummary.originalWords.toLocaleString()} → ${patternSummary.summarizedWords.toLocaleString()} words (${(patternSummary.compressionRatio * 100).toFixed(0)}% of original)*\n\n`;
     context += "---\n\n";
   }

@@ -1,8 +1,7 @@
-import { Agent } from "@mastra/core";
-import { Memory } from "@mastra/memory";
-import { LibSQLStore } from "@mastra/libsql";
 import ddlScriptGenerationPrompt from "./prompts/ddl-script-generation-prompt";
-import { gemini25FlashLite } from "../../models/google";
+import { gemini25FlashLite } from "../../../models/google";
+import { Agent } from "@mastra/core/agent";
+import { gpt41Mini } from "../../../models/openai";
 
 /**
  * DDL Script Generation Agent
@@ -16,7 +15,7 @@ import { gemini25FlashLite } from "../../models/google";
 const ddlScriptGenerationAgent = new Agent({
   name: "ddlScriptGenerationAgent",
   instructions: ddlScriptGenerationPrompt,
-  model: gemini25FlashLite,
+  model: gpt41Mini,
 });
 
 export default ddlScriptGenerationAgent;

@@ -22,6 +22,20 @@
       "when": 1763364760781,
       "tag": "0002_init_mass_evaluation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1763450190733,
+      "tag": "0003_wide_punisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1763456309568,
+      "tag": "0004_lonely_inertia",
+      "breakpoints": true
     }
   ]
 }

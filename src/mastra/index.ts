@@ -9,24 +9,23 @@ import loggingMiddleware from "./api/middlewares/logging.middileware";
 import evaluationRoutes from "./api/modules/evaluation/evaluation.route";
 import translationRoutes from "./api/modules/translation/translation.route";
 import massEvaluationRoutes from "./api/modules/mass-evaluation/mass-evaluation.route";
+import chatbotRoutes from "./api/modules/chatbot/chatbot.route";
 import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
 
 // Workflow import
 import evaluationSyncWorkflow from "./workflows/evaluation/evaluation-sync.workflow";
 import translationWorkflow from "./workflows/translation/translation.workflow";
-import dbGenerationWorkflow from "./workflows/db-generation/db-generation.workflow";
+import dbGenerationWorkflow from "./workflows/chatbot/db-generation/db-generation.workflow";
+import chatbotWorkflow from "./workflows/chatbot/chatbot.workflow";
 
 // Agent import
 import erdInformationExtractAgent from "./agents/evaluation/erd-information-extract.agent";
 import erdEvaluationAgent from "./agents/evaluation/erd-evaluation.agent";
 import translatorAgent from "./agents/evaluation/translator.agent";
-import ddlScriptGenerationAgent from "./agents/db-generation/ddl-script-generation-agent";
-import schemaGenerationAgent from "./agents/db-generation/schema-generation-agent";
-import {
-  chatRoute,
-  getConversationRoute,
-  resetConversationRoute,
-} from "../api/api-routes";
+import ddlScriptGenerationAgent from "./agents/chatbot/db-generation/ddl-script-generation-agent";
+import schemaGenerationAgent from "./agents/chatbot/db-generation/schema-generation-agent";
+import intentClassificationAgent from "./agents/chatbot/intent-classification-agent";
+import sideQuestionAgent from "./agents/chatbot/side-question-agent";
 
 // Configure storage based on environment
 const storage = process.env.DATABASE_URL
@@ -49,6 +48,8 @@ export const mastra = new Mastra({
     translationWorkflow,
     // Database generation workflows
     dbGenerationWorkflow,
+    // Chatbot workflow
+    chatbotWorkflow,
   },
   agents: {
     // Evaluation agents
@@ -58,6 +59,9 @@ export const mastra = new Mastra({
     // Database generation agents
     ddlScriptGenerationAgent,
     schemaGenerationAgent,
+    // Chatbot agents
+    intentClassificationAgent,
+    sideQuestionAgent,
   },
   storage,
   logger: new PinoLogger({
@@ -68,10 +72,14 @@ export const mastra = new Mastra({
     port: parseInt(process.env.PORT || "4111"),
     timeout: 300000, // 5 minutes for AI processing
     cors: {
-      origin: ["*"],
+      origin: process.env.CORS_ORIGIN?.split(",") || [
+        "http://localhost:3000",
+        "http://localhost",
+      ],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["*", "X-User-Token"], // Allow custom header
+      allowHeaders: ["*", "X-User-Token", "Authorization", "Content-Type"],
       credentials: true,
+      exposeHeaders: ["Content-Length", "Content-Type"],
     },
     // Register custom API routes for database generation
     middleware: [loggingMiddleware, authenticationMiddleware],
@@ -82,10 +90,8 @@ export const mastra = new Mastra({
 
       // Mass evaluation routes
       ...massEvaluationRoutes,
-
-      chatRoute,
-      getConversationRoute,
-      resetConversationRoute,
+      // Chatbot routes
+      ...chatbotRoutes,
     ],
   },
 });
