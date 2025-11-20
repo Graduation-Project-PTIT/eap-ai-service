@@ -35,12 +35,27 @@ const branchOutputSchema = z.object({
 const chatbotWorkflow = createWorkflow({
   id: "chatbotWorkflow",
 
-  // Input: User message with pre-classified intent from handler
+  // Input: Structured input with separated concerns for tools vs LLM
   inputSchema: z.object({
     userMessage: z
       .string()
       .min(1)
-      .describe("The user's request or instruction"),
+      .describe("The user's current message (for search tools)"),
+    fullContext: z
+      .string()
+      .describe("Full context including schema + history (for LLM)"),
+    domain: z
+      .string()
+      .nullable()
+      .describe("Business domain context for search query enrichment"),
+    schemaContext: z
+      .string()
+      .nullable()
+      .describe("Current database schema DDL"),
+    conversationHistory: z
+      .array(z.object({ role: z.string(), content: z.string() }))
+      .optional()
+      .describe("Previous conversation messages"),
     intent: z
       .enum(["schema", "side-question"])
       .describe("Pre-classified intent from handler"),

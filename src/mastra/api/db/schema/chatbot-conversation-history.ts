@@ -5,6 +5,7 @@ import {
   timestamp,
   text,
   jsonb,
+  numeric,
 } from "drizzle-orm/pg-core";
 
 export const chatbotConversationHistory = pgTable(
@@ -13,6 +14,8 @@ export const chatbotConversationHistory = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     userId: varchar("user_id", { length: 255 }).notNull(),
     conversationTitle: text("conversation_title"),
+    domain: varchar("domain", { length: 255 }), // e.g., "hotel booking", "e-commerce"
+    domainConfidence: numeric("domain_confidence", { precision: 3, scale: 2 }), // 0.00-1.00
     currentSchema: jsonb("current_schema"),
     currentDdl: text("current_ddl"),
     lastRunId: varchar("last_run_id", { length: 255 }),

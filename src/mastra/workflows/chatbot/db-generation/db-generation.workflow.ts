@@ -24,12 +24,19 @@ import ddlGenerationStep from "./steps/ddl-generation-step";
 const dbGenerationWorkflow = createWorkflow({
   id: "dbGenerationWorkflow",
 
-  // Input: User message only
+  // Input: Structured input with domain context for search enrichment
   inputSchema: z.object({
     userMessage: z
       .string()
       .min(1)
-      .describe("The user's request or instruction"),
+      .describe("The user's current message (for search tools)"),
+    fullContext: z
+      .string()
+      .describe("Full context including schema + history (for LLM)"),
+    domain: z
+      .string()
+      .nullable()
+      .describe("Business domain for search query enrichment"),
     enableSearch: z
       .boolean()
       .optional()

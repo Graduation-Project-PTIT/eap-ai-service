@@ -25,8 +25,10 @@ const schemaGenerationStep = createStep({
   id: "schemaGenerationStep",
 
   inputSchema: z.object({
-    userMessage: z.string().min(1),
-    enableSearch: z.boolean().optional().default(false), // Default to false for simplicity
+    userMessage: z.string().min(1).describe("User's current message"),
+    fullContext: z.string().describe("Full context for LLM"),
+    domain: z.string().nullable().describe("Business domain for search enrichment"),
+    enableSearch: z.boolean().optional().default(false),
   }),
 
   outputSchema: z.object({
@@ -57,16 +59,25 @@ const schemaGenerationStep = createStep({
       if (inputData.enableSearch) {
         const searchStartTime = Date.now();
 
-        // Execute BOTH searches in parallel (always do both when enabled)
-        // Note: Search engines are smart - we can pass the user message directly
-        // They'll extract relevant keywords automatically
+        // Enrich search queries with domain context
+        const domainEnrichedQuery = inputData.domain 
+          ? `${inputData.domain} ${inputData.userMessage}`
+          : inputData.userMessage;
+        
+        console.log(`🔍 Search query enrichment:`);
+        console.log(`   - Original: "${inputData.userMessage}"`);
+        console.log(`   - Domain: "${inputData.domain || 'none'}"`);
+        console.log(`   - Enriched: "${domainEnrichedQuery}"`);
+        console.log(`   - Length: ${domainEnrichedQuery.length} chars (limit: 2048)`);
+
+        // Execute BOTH searches in parallel with enriched queries
         const [businessResult, patternResult] = await Promise.allSettled([
           (businessDomainSearchTool as any).execute({
-            context: { domain: inputData.userMessage },
+            context: { domain: domainEnrichedQuery },
             runtimeContext: {},
           }),
           (dbDesignPatternSearchTool as any).execute({
-            context: { pattern: inputData.userMessage },
+            context: { pattern: domainEnrichedQuery },
             runtimeContext: {},
           }),
         ]);
@@ -120,10 +131,11 @@ const schemaGenerationStep = createStep({
         };
       }
 
-      // ===== STEP 4: Build Enhanced User Message =====
+      // ===== STEP 4: Build Enhanced Message for LLM =====
+      // Use fullContext (includes schema + history) for LLM, add search results if available
       const enhancedUserMessage = searchContext
-        ? `${searchContext}\n\n## User Request\n\n${inputData.userMessage}`
-        : inputData.userMessage;
+        ? `${searchContext}\n\n${inputData.fullContext}`
+        : inputData.fullContext;
 
       // Note: DDL context (if any) is injected manually via the handler
       // No need to fetch from memory here

@@ -92,6 +92,8 @@ const sendMessageHandler = async (c: Context) => {
     const intentOutputSchema = await import("zod").then(z => z.z.object({
       intent: z.z.enum(["schema", "side-question"]),
       schemaIntent: z.z.enum(["create", "modify"]).nullable(),
+      domain: z.z.string().nullable(),
+      domainConfidence: z.z.number().min(0).max(1).nullable(),
       confidence: z.z.number(),
     }));
     
@@ -102,14 +104,38 @@ const sendMessageHandler = async (c: Context) => {
     const intentClassification = (intentResult as any).object as {
       intent: "schema" | "side-question";
       schemaIntent: "create" | "modify" | null;
+      domain: string | null;
+      domainConfidence: number | null;
       confidence: number;
     };
     
-    console.log(`🎯 Intent: ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}`);
+    console.log(`🎯 Intent: ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}, Domain: ${intentClassification.domain}`);
 
-    // 6. Check if user is trying to create a NEW schema when one already exists
+    // 6. Save domain on first schema message (if extracted with high confidence)
     const hasCurrentSchema = conversation[0].currentSchema && conversation[0].currentDdl;
+    const shouldSaveDomain = 
+      !conversation[0].domain && 
+      intentClassification.domain && 
+      intentClassification.domainConfidence && 
+      intentClassification.domainConfidence >= 0.7;
     
+    if (shouldSaveDomain) {
+      console.log(`💾 Saving domain: "${intentClassification.domain}" (confidence: ${intentClassification.domainConfidence})`);
+      await db
+        .update(chatbotConversationHistory)
+        .set({
+          domain: intentClassification.domain!,
+          domainConfidence: intentClassification.domainConfidence!.toString(),
+          updatedAt: new Date(),
+        })
+        .where(eq(chatbotConversationHistory.id, conversationId));
+      
+      // Update local conversation object
+      conversation[0].domain = intentClassification.domain!;
+      conversation[0].domainConfidence = intentClassification.domainConfidence!.toString();
+    }
+    
+    // 7. Check if user is trying to create a NEW schema when one already exists
     if (hasCurrentSchema && intentClassification.schemaIntent === "create") {
       console.log(`🚫 User attempting to create new schema in conversation with existing schema`);
       
@@ -150,37 +176,39 @@ const sendMessageHandler = async (c: Context) => {
       });
     }
 
-    // 7. For schema modifications, include current DDL in context
-    let enhancedMessage = "";
+    // 8. Build context for LLM (separate from search query)
+    let fullContext = "";
 
     if (hasCurrentSchema && intentClassification.schemaIntent === "modify") {
       console.log(`🗄️  Including schema for MODIFICATION (${conversation[0].currentDdl?.length} chars)`);
       
-      enhancedMessage += `# Current Database Schema (MODIFICATION MODE)\n\n`;
-      enhancedMessage += `**Instruction:** The user wants to MODIFY the existing schema below. Update only the specified tables/fields.\n\n`;
-      enhancedMessage += `\`\`\`sql\n${conversation[0].currentDdl}\n\`\`\`\n\n`;
-      enhancedMessage += `---\n\n`;
+      fullContext += `# Current Database Schema (MODIFICATION MODE)\n\n`;
+      fullContext += `**Instruction:** The user wants to MODIFY the existing schema below. Update only the specified tables/fields.\n\n`;
+      fullContext += `\`\`\`sql\n${conversation[0].currentDdl}\n\`\`\`\n\n`;
+      fullContext += `---\n\n`;
     }
 
-    // 8. Add conversation history in chronological order
+    // 9. Add conversation history in chronological order
     if (messages.length > 0) {
-      enhancedMessage += `# Conversation History\n\n`;
+      fullContext += `# Conversation History\n\n`;
       
       messages.forEach((msg) => {
         const timeAgo = msg.createdAt ? `(${getTimeAgo(msg.createdAt)})` : '';
-        enhancedMessage += `**${msg.role === "user" ? "User" : "Assistant"}** ${timeAgo}:\n${msg.content}\n\n`;
+        fullContext += `**${msg.role === "user" ? "User" : "Assistant"}** ${timeAgo}:\n${msg.content}\n\n`;
       });
       
-      enhancedMessage += `---\n\n`;
+      fullContext += `---\n\n`;
     }
 
-    // 9. Add current user message
-    enhancedMessage += `# Current Request\n\n${message}`;
+    // 10. Add current user message
+    fullContext += `# Current Request\n\n${message}`;
 
     console.log(`📝 Context built for ${intentClassification.schemaIntent || intentClassification.intent}`);
-    console.log(`📏 Total context length: ${enhancedMessage.length} characters`);
+    console.log(`📏 Full context length: ${fullContext.length} characters`);
+    console.log(`📏 Current message length: ${message.length} characters`);
+    console.log(`🏷️  Domain context: ${conversation[0].domain || 'none'}`);
 
-    // 10. Insert user message
+    // 11. Insert user message
     await db.insert(chatbotMessageHistory).values({
       conversationId,
       role: "user",
@@ -189,7 +217,7 @@ const sendMessageHandler = async (c: Context) => {
     });
     console.log(`💾 User message saved to database`);
 
-    // 11. Start the chatbot workflow
+    // 12. Start the chatbot workflow with structured input
     const workflow = mastra.getWorkflow("chatbotWorkflow");
     if (!workflow) {
       console.error(`❌ Chatbot workflow not found`);
@@ -201,7 +229,12 @@ const sendMessageHandler = async (c: Context) => {
 
     const workflowResult = await run.start({
       inputData: {
-        userMessage: enhancedMessage,
+        // Separate concerns: user message for tools, full context for LLM
+        userMessage: message,
+        fullContext: fullContext,
+        domain: conversation[0].domain || null,
+        schemaContext: conversation[0].currentDdl || null,
+        conversationHistory: messages.map(m => ({ role: m.role, content: m.content })),
         intent: intentClassification.intent,
         schemaIntent: intentClassification.schemaIntent,
         confidence: intentClassification.confidence,

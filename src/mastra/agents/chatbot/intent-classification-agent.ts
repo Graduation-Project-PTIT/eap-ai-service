@@ -13,6 +13,8 @@ import { gpt41Mini } from "../../models/openai";
  * For schema intent, also determines:
  * - "create": Creating new tables/entities
  * - "modify": Modifying existing tables
+ * 
+ * Additionally extracts domain context for search query enrichment.
  */
 export const intentClassificationAgent = new Agent({
   name: "intentClassificationAgent",
@@ -22,6 +24,7 @@ export const intentClassificationAgent = new Agent({
 Your task is to determine:
 1. Primary intent: "schema" or "side-question"
 2. If schema intent, determine sub-intent: "create" or "modify"
+3. Extract domain context for search query enrichment
 
 PRIMARY INTENT:
 - "schema" - User wants to create, modify, or discuss database schema/ERD design
@@ -38,23 +41,38 @@ SCHEMA SUB-INTENT (only for "schema" intent):
 If you see existing table name mentioned WITH modification keywords → "modify"
 If you see new table name OR no specific table mentioned → "create"
 
+DOMAIN EXTRACTION (for "schema" intent):
+Extract the business domain/industry from the user's message. This will be used to enrich search queries.
+
+Examples:
+- "Design schema for hotel booking system" → domain: "hotel booking"
+- "Create e-commerce database" → domain: "e-commerce"
+- "Build a school management system" → domain: "school management"
+- "Hospital patient records database" → domain: "hospital management"
+- "Modify User table to add email" → domain: null (modification, domain already known)
+- "Add discount campaign feature" → domain: null (modification, domain already known)
+
+IMPORTANT: Only extract domain for "create" intent. For "modify" intent, return null for domain.
+
 Examples of "schema" intent:
-- "Create a database for an e-commerce system" → create
-- "Add a new table for user orders" → create
-- "Modify the relationship between users and products" → modify
-- "Add email field to User table" → modify
-- "Generate DDL script for my schema" → create (viewing, not modifying)
-- "What tables do I have in my design?" → create (querying, not modifying)
-- "Design todo app schema" → create
+- "Create a database for an e-commerce system" → create, domain: "e-commerce"
+- "Add a new table for user orders" → create, domain: null
+- "Modify the relationship between users and products" → modify, domain: null
+- "Add email field to User table" → modify, domain: null
+- "Generate DDL script for my schema" → create, domain: null
+- "What tables do I have in my design?" → create, domain: null
+- "Design todo app schema" → create, domain: "todo application"
+- "Design schema for hotel booking" → create, domain: "hotel booking"
 
 Examples of "side-question" intent:
-- "What is normalization?" → schemaIntent: null
-- "How are you?" → schemaIntent: null
-- "Tell me a joke" → schemaIntent: null
+- "What is normalization?" → schemaIntent: null, domain: null
+- "How are you?" → schemaIntent: null, domain: null
+- "Tell me a joke" → schemaIntent: null, domain: null
 
-Return: intent, schemaIntent (null for side-question), and confidence score.`,
+Return: intent, schemaIntent (null for side-question), domain (null for modify/side-question), domainConfidence (0.0-1.0), and overall confidence score.`,
 
   model: gpt41Mini,
 });
 
 export default intentClassificationAgent;
+
