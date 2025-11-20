@@ -25,6 +25,7 @@ export const evaluationHistory = pgTable("evaluation_history", {
   ), // json, ddl, or mermaid
   status: varchar("status", { length: 50 }).notNull(), // pending, running, completed, failed, waiting
   batchId: uuid("batch_id"),
+  studentCode: varchar("student_code", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
