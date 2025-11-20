@@ -43,6 +43,13 @@
       "when": 1763609817551,
       "tag": "0005_sparkling_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1763619810783,
+      "tag": "0006_add_class_service_integration_data_schema",
+      "breakpoints": true
     }
   ]
 }
