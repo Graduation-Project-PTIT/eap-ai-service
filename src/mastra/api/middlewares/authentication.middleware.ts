@@ -8,7 +8,12 @@ const verifier = CognitoJwtVerifier.create({
   clientId: process.env.COGNITO_CLIENT_ID!,
 });
 
-const requiredAuthRoutes = ["/ai/evaluations", "/ai/mass-evaluation"];
+const requiredAuthRoutes = [
+  "/ai/evaluations",
+  "/ai/mass-evaluation",
+  "/ai/chat",
+  "/ai/conversations",
+];
 const excludedRoutes = [
   "/health",
   "/ai/mass-evaluation/stats",

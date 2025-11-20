@@ -1,6 +1,6 @@
 import { createWorkflow } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../schemas/erdInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
 import schemaGenerationStep from "./steps/schema-generation-step";
 import ddlGenerationStep from "./steps/ddl-generation-step";
 
@@ -24,16 +24,19 @@ import ddlGenerationStep from "./steps/ddl-generation-step";
 const dbGenerationWorkflow = createWorkflow({
   id: "dbGenerationWorkflow",
 
-  // Input: User message and memory identifiers
+  // Input: Structured input with domain context for search enrichment
   inputSchema: z.object({
-    threadId: z.string().describe("Thread ID for conversation isolation"),
-    resourceId: z
-      .string()
-      .describe("Resource ID (typically userId or conversationId)"),
     userMessage: z
       .string()
       .min(1)
-      .describe("The user's request or instruction"),
+      .describe("The user's current message (for search tools)"),
+    fullContext: z
+      .string()
+      .describe("Full context including schema + history (for LLM)"),
+    domain: z
+      .string()
+      .nullable()
+      .describe("Business domain for search query enrichment"),
     enableSearch: z
       .boolean()
       .optional()
@@ -43,8 +46,6 @@ const dbGenerationWorkflow = createWorkflow({
 
   // Output: Updated schema, DDL script, and explanation
   outputSchema: z.object({
-    threadId: z.string(),
-    resourceId: z.string(),
     updatedSchema: erdInformationGenerationSchema,
     ddlScript: z.string(),
     agentResponse: z
@@ -59,5 +60,5 @@ const dbGenerationWorkflow = createWorkflow({
   .then(ddlGenerationStep)
 
   .commit();
-  
+
 export default dbGenerationWorkflow;

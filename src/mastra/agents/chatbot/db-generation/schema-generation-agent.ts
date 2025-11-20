@@ -1,8 +1,10 @@
-import { Agent } from "@mastra/core";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
-import { gemini25Flash } from "../../models/google";
+import { gemini25Flash } from "../../../models/google";
 import schemaGenerationPrompt from "./prompts/schema-generation-prompt";
+import { Agent } from "@mastra/core/agent";
+import { gpt41 } from "../../../models/openai";
+import { claudeHaiku45 } from "../../../models/anthropic";
 
 /**
  * Conversational Schema Agent (Optimized)
@@ -19,17 +21,7 @@ import schemaGenerationPrompt from "./prompts/schema-generation-prompt";
 export const schemaGenerationAgent = new Agent({
   name: "schemaGenerationAgent",
   instructions: schemaGenerationPrompt,
-  model: gemini25Flash,
-
-  memory: new Memory({
-    storage: new LibSQLStore({
-      url: ":memory:",
-    }),
-    options: {
-      // Keep conversation history for schema modifications
-      lastMessages: 20,
-    },
-  }),
+  model: gpt41,
 });
 
 export default schemaGenerationAgent;

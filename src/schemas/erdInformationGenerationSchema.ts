@@ -12,11 +12,12 @@ const erdInformationGenerationSchema = z.object({
           foreignKey: z.boolean(),
           unique: z.boolean(),
           nullable: z.boolean(),
-          foreignKeyTable: z.string().optional(),
-          foreignKeyAttribute: z.string().optional(),
+          foreignKeyTable: z.string().nullable().default(null),
+          foreignKeyAttribute: z.string().nullable().default(null),
           relationType: z
             .enum(["one-to-one", "one-to-many", "many-to-one", "many-to-many"])
-            .optional(),
+            .nullable()
+            .default(null),
         })
       ),
     })
