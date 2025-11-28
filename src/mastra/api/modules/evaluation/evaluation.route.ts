@@ -4,6 +4,7 @@ import getEvaluationHandler from "./handlers/get-evaluation.handler";
 import getEvaluationResult from "./handlers/get-evaluation-result.handler";
 import sendFinishRefinementEvent from "./handlers/send-finish-refinement-event.handler";
 import getListEvaluationHandler from "./handlers/get-list-evaluation.handler";
+import streamEvaluationHandler from "./handlers/stream-evaluation.handler";
 
 export const createEvaluationRoute = registerApiRoute("/ai/evaluations", {
   method: "POST",
@@ -39,10 +40,19 @@ export const sendFinishRefinementEventRoute = registerApiRoute(
   }
 );
 
+export const streamEvaluationRoute = registerApiRoute(
+  "/ai/evaluations/stream",
+  {
+    method: "POST",
+    handler: streamEvaluationHandler,
+  }
+);
+
 export default [
   createEvaluationRoute,
   getListEvaluationRoute,
   getEvaluationRoute,
   getEvaluationResultRoute,
   sendFinishRefinementEventRoute,
+  streamEvaluationRoute,
 ];

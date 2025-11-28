@@ -6,6 +6,7 @@ import erdEvaluationStep from "./steps/erd-evaluation.step";
 const evaluationSyncWorkflow = createWorkflow({
   id: "evaluationSyncWorkflow",
   inputSchema: z.object({
+    isStream: z.boolean().optional().default(false),
     erdImage: z.string().url(),
     questionDescription: z.string(),
     userToken: z.string().optional(), // Add user token
@@ -25,6 +26,7 @@ const evaluationSyncWorkflow = createWorkflow({
   .then(erdInformationExtractStep)
   .map(async ({ inputData, getInitData }) => {
     return {
+      isStream: getInitData().isStream,
       questionDescription: getInitData().questionDescription,
       extractedInformation: inputData,
       preferredFormat: getInitData().preferredFormat,
@@ -34,4 +36,3 @@ const evaluationSyncWorkflow = createWorkflow({
   .commit();
 
 export default evaluationSyncWorkflow;
-

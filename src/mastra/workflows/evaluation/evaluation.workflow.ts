@@ -6,6 +6,7 @@ import erdEvaluationStep from "./steps/erd-evaluation.step";
 const evaluationWorkflow = createWorkflow({
   id: "evaluationWorkflow",
   inputSchema: z.object({
+    isStream: z.boolean().optional().default(false),
     erdImage: z.string().url(),
     questionDescription: z.string(),
     userToken: z.string().optional(), // Add user token
@@ -23,14 +24,23 @@ const evaluationWorkflow = createWorkflow({
     };
   })
   .then(erdInformationExtractStep)
-  .map(async ({ inputData, getInitData }) => {
+  .map(async ({ inputData, getInitData, suspend, resumeData }) => {
+    console.log("INIT DATA", getInitData());
+    const { approved } = resumeData ?? {};
+
+    if (!approved) {
+      return await suspend({});
+    }
+
     return {
+      isStream: getInitData().isStream,
       questionDescription: getInitData().questionDescription,
       extractedInformation: inputData,
       preferredFormat: getInitData().preferredFormat,
     };
   })
-  .waitForEvent("finish-refinement", erdEvaluationStep)
+  // .waitForEvent("finish-refinement", erdEvaluationStep)
+  .then(erdEvaluationStep)
   .commit();
 
 export default evaluationWorkflow;
