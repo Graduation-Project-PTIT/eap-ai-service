@@ -24,8 +24,9 @@ const streamEvaluationHandler = async (c: Context) => {
     mastra
   );
 
-  const hostname = process.env.HOSTNAME || "http://localhost";
-  const fileUrl = `${hostname}/api/files/${validatedInput.fileKey}/render`;
+  const fileServiceURL =
+    process.env.FILE_SERVICE_URL || "http://localhost:8081";
+  const fileUrl = `${fileServiceURL}/api/files/${validatedInput.fileKey}/render`;
 
   // Case resume workflow
   if (typeof input.runId === "string") {

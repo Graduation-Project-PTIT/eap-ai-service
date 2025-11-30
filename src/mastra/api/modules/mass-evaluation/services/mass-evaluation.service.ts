@@ -54,8 +54,9 @@ class MassEvaluationService {
         .set({ status: "processing", workflowRunId: run.id })
         .where(eq(evaluationHistory.id, taskId));
 
-      const hostname = process.env.HOSTNAME || "http://localhost";
-      const fileUrl = `${hostname}/api/files/${task[0].fileKey}/render`;
+      const fileServiceURL =
+        process.env.FILE_SERVICE_URL || "http://localhost:8081";
+      const fileUrl = `${fileServiceURL}/api/files/${task[0].fileKey}/render`;
 
       const workflowOutput = await run.start({
         inputData: {

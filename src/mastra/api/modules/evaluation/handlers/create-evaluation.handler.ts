@@ -23,8 +23,9 @@ const crateEvaluationHandler = async (c: Context) => {
 
   const run = await workflow.createRunAsync();
 
-  const hostname = process.env.HOSTNAME || "http://localhost";
-  const fileUrl = `${hostname}/api/files/${validatedInput.fileKey}/render`;
+  const fileServiceURL =
+    process.env.FILE_SERVICE_URL || "http://localhost:8081";
+  const fileUrl = `${fileServiceURL}/api/files/${validatedInput.fileKey}/render`;
 
   run.start({
     inputData: {
