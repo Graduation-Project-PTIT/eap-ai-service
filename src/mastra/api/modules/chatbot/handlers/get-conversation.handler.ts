@@ -71,6 +71,7 @@ const getConversationHandler = async (c: Context) => {
     conversationId: conversation[0].id,
     exists: true,
     schema: conversation[0].currentSchema,
+    currentDdl: conversation[0].currentDdl, // Include current DDL from conversation
     thread: {
       title: conversation[0].conversationTitle || "",
       createdAt: conversation[0].createdAt?.toISOString() || "",

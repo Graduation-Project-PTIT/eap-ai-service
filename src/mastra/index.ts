@@ -73,7 +73,7 @@ export const mastra = new Mastra({
     timeout: 300000, // 5 minutes for AI processing
     cors: {
       origin: process.env.CORS_ORIGIN?.split(",") || [
-        "http://localhost:3000",
+        "http://localhost:3001",
         "http://localhost",
       ],
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

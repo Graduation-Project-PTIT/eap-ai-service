@@ -2,7 +2,7 @@ import { Agent } from "@mastra/core/agent";
 import { Memory } from "@mastra/memory";
 import { LibSQLStore } from "@mastra/libsql";
 import { gemini25Flash } from "../../models/google";
-import { gpt41 } from "../../models/openai";
+import { gpt41, gpt41Mini } from "../../models/openai";
 import { claudeHaiku45 } from "../../models/anthropic";
 
 /**

@@ -101,7 +101,10 @@ const sendMessageHandler = async (c: Context) => {
       output: intentOutputSchema,
     });
     
-    const intentClassification = (intentResult as any).object as {
+    const resultWithObject = intentResult as any;
+    
+    // Declare intentClassification with proper type
+    let intentClassification: {
       intent: "schema" | "side-question";
       schemaIntent: "create" | "modify" | null;
       domain: string | null;
@@ -109,7 +112,32 @@ const sendMessageHandler = async (c: Context) => {
       confidence: number;
     };
     
-    console.log(`🎯 Intent: ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}, Domain: ${intentClassification.domain}`);
+    // Check if the agent generated a structured response
+    if (!resultWithObject || !resultWithObject.object) {
+      console.error("⚠️ Agent failed to generate structured intent classification response");
+      console.error("⚠️ Intent result:", intentResult);
+      
+      // Default to schema/create on error (similar to intent-classification-step.ts)
+      intentClassification = {
+        intent: "schema" as const,
+        schemaIntent: "create" as const,
+        domain: null,
+        domainConfidence: null,
+        confidence: 0.5,
+      };
+      
+      console.log(`🎯 Intent (default): ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}, Domain: ${intentClassification.domain}`);
+    } else {
+      intentClassification = resultWithObject.object as {
+        intent: "schema" | "side-question";
+        schemaIntent: "create" | "modify" | null;
+        domain: string | null;
+        domainConfidence: number | null;
+        confidence: number;
+      };
+      
+      console.log(`🎯 Intent: ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}, Domain: ${intentClassification.domain}`);
+    }
 
     // 6. Save domain on first schema message (if extracted with high confidence)
     const hasCurrentSchema = conversation[0].currentSchema && conversation[0].currentDdl;
@@ -173,6 +201,47 @@ const sendMessageHandler = async (c: Context) => {
         schema: conversation[0].currentSchema,
         ddl: conversation[0].currentDdl,
         blocked: true, // Indicate that schema creation was blocked
+      });
+    }
+
+    // 7b. Check if user is trying to MODIFY a schema when none exists yet
+    if (!hasCurrentSchema && intentClassification.schemaIntent === "modify") {
+      console.log(`🚫 User attempting to modify schema but no schema exists yet`);
+      
+      const instructionMessage = `I notice you're trying to modify a database schema, but this conversation doesn't have a schema yet.\n\n**Please create a schema first** before making modifications.\n\nYou can start by describing what kind of database you want to create. For example:\n- "Create a database schema for an e-commerce system"\n- "Design a schema for a hotel booking application"\n- "I need a database for managing student records"\n\nOnce the schema is created, you'll be able to modify it by adding, removing, or updating tables and fields!`;
+      
+      // Save both user and assistant messages
+      await db.insert(chatbotMessageHistory).values({
+        conversationId,
+        role: "user",
+        content: message,
+        enableSearch: enableSearch ?? false,
+        intent: "schema",
+      });
+      
+      await db.insert(chatbotMessageHistory).values({
+        conversationId,
+        role: "assistant",
+        content: instructionMessage,
+        intent: "side-question",
+      });
+      
+      // Update conversation timestamp
+      await db
+        .update(chatbotConversationHistory)
+        .set({
+          lastMessageAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(chatbotConversationHistory.id, conversationId));
+      
+      return c.json({
+        success: true,
+        conversationId,
+        response: instructionMessage,
+        schema: { entities: [] },
+        ddl: "",
+        blocked: true, // Indicate that schema modification was blocked
       });
     }
 

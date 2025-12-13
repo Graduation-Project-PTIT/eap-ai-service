@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: eap-ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mastra_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eap-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eap-ai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eap-network
+
+  # Uncomment the service below to run the eap-ai-service in Docker
+  # eap-ai-service:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: eap-ai-service
+  #   restart: unless-stopped
+  #   ports:
+  #     - "4111:4111"
+  #   environment:
+  #     NODE_ENV: development
+  #     PORT: 4111
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: eap_db
+  #     DB_USER: postgres
+  #     DB_PASSWORD: password
+  #     REDIS_URL: redis://redis:6379
+  #     REDIS_PASSWORD: ""
+  #     REDIS_DB: 0
+  #     # Add your API keys here or use .env file
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY}
+  #     GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+  #     SERPER_API_KEY: ${SERPER_API_KEY}
+  #     CORS_ORIGIN: http://localhost:3000,http://localhost,http://localhost:5173
+  #     FILE_SERVICE_URL: http://localhost:3001
+  #     CLASS_SERVICE_URL: http://localhost:3002
+  #     MAX_CONCURRENT_EVALUATIONS: 5
+  #     MASTRA_LOG_LEVEL: info
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - eap-network
+  #   volumes:
+  #     - ./data:/usr/src/app/data
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  eap-network:
+    driver: bridge

@@ -2,6 +2,7 @@ import { registerApiRoute } from "@mastra/core/server";
 import sendMessageHandler from "./handlers/send-message.handler";
 import getConversationHandler from "./handlers/get-conversation.handler";
 import listConversationsHandler from "./handlers/list-conversations.handler";
+import updateSchemaHandler from "./handlers/update-schema.handler";
 
 export const sendMessageRoute = registerApiRoute("/ai/chat", {
   method: "POST",
@@ -21,4 +22,17 @@ export const getConversationRoute = registerApiRoute(
   }
 );
 
-export default [sendMessageRoute, listConversationsRoute, getConversationRoute];
+export const updateSchemaRoute = registerApiRoute(
+  "/ai/chat/:conversationId/schema",
+  {
+    method: "PUT",
+    handler: updateSchemaHandler,
+  }
+);
+
+export default [
+  sendMessageRoute,
+  listConversationsRoute,
+  getConversationRoute,
+  updateSchemaRoute,
+];

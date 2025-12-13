@@ -15,7 +15,7 @@ import { gpt41Mini } from "../../../models/openai";
 const ddlScriptGenerationAgent = new Agent({
   name: "ddlScriptGenerationAgent",
   instructions: ddlScriptGenerationPrompt,
-  model: gpt41Mini,
+  model: gemini25FlashLite,
 });
 
 export default ddlScriptGenerationAgent;

@@ -71,7 +71,7 @@ Examples of "side-question" intent:
 
 Return: intent, schemaIntent (null for side-question), domain (null for modify/side-question), domainConfidence (0.0-1.0), and overall confidence score.`,
 
-  model: gpt41Mini,
+  model: gemini25FlashLite,
 });
 
 export default intentClassificationAgent;
