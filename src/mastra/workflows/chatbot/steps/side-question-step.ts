@@ -1,6 +1,6 @@
 import { createStep } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
 
 /**
  * Side Question Handling Step
@@ -17,7 +17,9 @@ const sideQuestionStep = createStep({
     fullContext: z.string().describe("Full context including schema + history"),
     domain: z.string().nullable(),
     schemaContext: z.string().nullable(),
-    conversationHistory: z.array(z.object({ role: z.string(), content: z.string() })).optional(),
+    conversationHistory: z
+      .array(z.object({ role: z.string(), content: z.string() }))
+      .optional(),
     intent: z.enum(["schema", "side-question"]),
     schemaIntent: z.enum(["create", "modify"]).nullable(),
     confidence: z.number(),
@@ -37,7 +39,9 @@ const sideQuestionStep = createStep({
     const { fullContext } = inputData;
     const agent = mastra.getAgent("sideQuestionAgent");
 
-    console.log(`💬 Handling side question with full context (${fullContext.length} chars)`);
+    console.log(
+      `💬 Handling side question with full context (${fullContext.length} chars)`
+    );
 
     try {
       // Note: Memory is disabled - context is provided manually in the message

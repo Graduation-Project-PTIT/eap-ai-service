@@ -1,6 +1,6 @@
 import { createStep, MastraStorage } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../../../schemas/erdInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../../../schemas/dbInformationGenerationSchema";
 import businessDomainSearchTool from "../../../../tools/business-domain-search.tool";
 import dbDesignPatternSearchTool from "../../../../tools/db-design-pattern-search.tool";
 import schemaGenerationPrompt from "../../../../agents/chatbot/db-generation/prompts/schema-generation-prompt";
@@ -27,7 +27,10 @@ const schemaGenerationStep = createStep({
   inputSchema: z.object({
     userMessage: z.string().min(1).describe("User's current message"),
     fullContext: z.string().describe("Full context for LLM"),
-    domain: z.string().nullable().describe("Business domain for search enrichment"),
+    domain: z
+      .string()
+      .nullable()
+      .describe("Business domain for search enrichment"),
     enableSearch: z.boolean().optional().default(false),
   }),
 
@@ -60,15 +63,17 @@ const schemaGenerationStep = createStep({
         const searchStartTime = Date.now();
 
         // Enrich search queries with domain context
-        const domainEnrichedQuery = inputData.domain 
+        const domainEnrichedQuery = inputData.domain
           ? `${inputData.domain} ${inputData.userMessage}`
           : inputData.userMessage;
-        
+
         console.log(`🔍 Search query enrichment:`);
         console.log(`   - Original: "${inputData.userMessage}"`);
-        console.log(`   - Domain: "${inputData.domain || 'none'}"`);
+        console.log(`   - Domain: "${inputData.domain || "none"}"`);
         console.log(`   - Enriched: "${domainEnrichedQuery}"`);
-        console.log(`   - Length: ${domainEnrichedQuery.length} chars (limit: 2048)`);
+        console.log(
+          `   - Length: ${domainEnrichedQuery.length} chars (limit: 2048)`
+        );
 
         // Execute BOTH searches in parallel with enriched queries
         const [businessResult, patternResult] = await Promise.allSettled([

@@ -1,13 +1,13 @@
 import { createWorkflow } from "@mastra/core";
 import { z } from "zod";
-import erdInformationExtractStep from "./steps/erd-information-extract.step";
-import erdEvaluationStep from "./steps/erd-evaluation.step";
+import dbInformationExtractStep from "./steps/db-information-extract.step";
+import dbEvaluationStep from "./steps/db-evaluation.step";
 
-const evaluationSyncWorkflow = createWorkflow({
-  id: "evaluationSyncWorkflow",
+const dbEvaluationSyncWorkflow = createWorkflow({
+  id: "dbEvaluationSyncWorkflow",
   inputSchema: z.object({
     isStream: z.boolean().optional().default(false),
-    erdImage: z.string().url(),
+    erdImage: z.url(),
     questionDescription: z.string(),
     userToken: z.string().optional(), // Add user token
     preferredFormat: z.enum(["json", "ddl", "mermaid"]).default("json"), // Format for evaluation
@@ -23,7 +23,7 @@ const evaluationSyncWorkflow = createWorkflow({
       userToken: inputData.userToken,
     };
   })
-  .then(erdInformationExtractStep)
+  .then(dbInformationExtractStep)
   .map(async ({ inputData, getInitData }) => {
     return {
       isStream: getInitData().isStream,
@@ -32,7 +32,7 @@ const evaluationSyncWorkflow = createWorkflow({
       preferredFormat: getInitData().preferredFormat,
     };
   })
-  .then(erdEvaluationStep)
+  .then(dbEvaluationStep)
   .commit();
 
-export default evaluationSyncWorkflow;
+export default dbEvaluationSyncWorkflow;

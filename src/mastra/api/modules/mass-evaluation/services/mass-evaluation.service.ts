@@ -45,7 +45,7 @@ class MassEvaluationService {
       console.log(`[Task ${taskId}] Slot acquired, starting workflow...`);
 
       const mastra = c.get("mastra");
-      const workflow = mastra.getWorkflow("evaluationSyncWorkflow");
+      const workflow = mastra.getWorkflow("dbEvaluationSyncWorkflow");
       const run = await workflow.createRunAsync({});
 
       // Update database

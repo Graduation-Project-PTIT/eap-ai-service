@@ -8,8 +8,8 @@ export const getEvaluationWorkflowByMode = (
   const isStandardEvaluationMode = mode === EVALUATION_MODE.STANDARD;
 
   const workflow = isStandardEvaluationMode
-    ? mastra.getWorkflow("evaluationWorkflow")
-    : mastra.getWorkflow("evaluationSyncWorkflow");
+    ? mastra.getWorkflow("dbEvaluationWorkflow")
+    : mastra.getWorkflow("dbEvaluationSyncWorkflow");
 
   return workflow;
 };

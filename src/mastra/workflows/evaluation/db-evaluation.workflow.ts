@@ -1,10 +1,10 @@
 import { createWorkflow } from "@mastra/core";
 import { z } from "zod";
-import erdInformationExtractStep from "./steps/erd-information-extract.step";
-import erdEvaluationStep from "./steps/erd-evaluation.step";
+import dbInformationExtractStep from "./steps/db-information-extract.step";
+import dbEvaluationStep from "./steps/db-evaluation.step";
 
-const evaluationWorkflow = createWorkflow({
-  id: "evaluationWorkflow",
+const dbEvaluationWorkflow = createWorkflow({
+  id: "dbEvaluationWorkflow",
   inputSchema: z.object({
     erdImage: z.string().url(),
     questionDescription: z.string(),
@@ -22,7 +22,7 @@ const evaluationWorkflow = createWorkflow({
       userToken: inputData.userToken,
     };
   })
-  .then(erdInformationExtractStep)
+  .then(dbInformationExtractStep)
   .map(async ({ inputData, getInitData }) => {
     return {
       questionDescription: getInitData().questionDescription,
@@ -30,7 +30,7 @@ const evaluationWorkflow = createWorkflow({
       preferredFormat: getInitData().preferredFormat,
     };
   })
-  .waitForEvent("finish-refinement", erdEvaluationStep)
+  .waitForEvent("finish-refinement", dbEvaluationStep)
   .commit();
 
-export default evaluationWorkflow;
+export default dbEvaluationWorkflow;

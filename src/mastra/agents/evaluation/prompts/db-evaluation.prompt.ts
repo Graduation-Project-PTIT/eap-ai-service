@@ -1,4 +1,4 @@
-const erdEvaluationPrompt = `
+const dbEvaluationPrompt = `
   You are a university professor teaching Database Design course. You will review and grade the Entity-Relationship Diagram (ERD) of a student.
   **//-- CORE INSTRUCTIONS --//**
 
@@ -93,4 +93,4 @@ const erdEvaluationPrompt = `
       *   [e.g., "When you see phrases like 'many students take many courses', it's a strong indicator that a many-to-many relationship exists, which typically requires an associative (or bridge) entity to implement."]
 `;
 
-export default erdEvaluationPrompt;
+export default dbEvaluationPrompt;

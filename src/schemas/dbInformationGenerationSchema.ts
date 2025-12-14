@@ -1,6 +1,6 @@
 import z from "zod";
 
-const erdInformationGenerationSchema = z.object({
+const dbInformationGenerationSchema = z.object({
   entities: z.array(
     z.object({
       name: z.string(),
@@ -24,4 +24,4 @@ const erdInformationGenerationSchema = z.object({
   ),
 });
 
-export default erdInformationGenerationSchema;
+export default dbInformationGenerationSchema;

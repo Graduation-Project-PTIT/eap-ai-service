@@ -1,4 +1,4 @@
-const erdInformationExtractPrompt = `
+const dbInformationExtractPrompt = `
   You are an expert in Entity Relationship Diagrams. You will be provided with an image of an ERD.
   Your job is to extract the information from the image and return it in THREE different formats simultaneously:
   1. JSON (structured data)
@@ -153,4 +153,4 @@ const erdInformationExtractPrompt = `
   All three formats must represent the SAME ERD information. Ensure consistency across all formats.
 `;
 
-export default erdInformationExtractPrompt;
+export default dbInformationExtractPrompt;

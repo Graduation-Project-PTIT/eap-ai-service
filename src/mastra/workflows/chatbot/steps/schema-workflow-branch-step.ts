@@ -1,6 +1,6 @@
 import { createStep } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
 
 /**
  * Schema Workflow Branch Step
@@ -16,7 +16,9 @@ const schemaWorkflowBranchStep = createStep({
     fullContext: z.string().describe("Full context including schema + history"),
     domain: z.string().nullable(),
     schemaContext: z.string().nullable(),
-    conversationHistory: z.array(z.object({ role: z.string(), content: z.string() })).optional(),
+    conversationHistory: z
+      .array(z.object({ role: z.string(), content: z.string() }))
+      .optional(),
     intent: z.enum(["schema", "side-question"]),
     schemaIntent: z.enum(["create", "modify"]).nullable(),
     confidence: z.number(),
@@ -36,7 +38,7 @@ const schemaWorkflowBranchStep = createStep({
     console.log(`🏗️ Running schema generation workflow...`);
     console.log(`📏 User message: ${inputData.userMessage.length} chars`);
     console.log(`📏 Full context: ${inputData.fullContext.length} chars`);
-    console.log(`🏷️  Domain: ${inputData.domain || 'none'}`);
+    console.log(`🏷️  Domain: ${inputData.domain || "none"}`);
 
     // Get and execute the dbGenerationWorkflow
     const workflow = mastra.getWorkflow("dbGenerationWorkflow");

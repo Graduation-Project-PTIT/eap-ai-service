@@ -1,6 +1,6 @@
 import { createStep, MastraStorage } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../../../schemas/erdInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../../../schemas/dbInformationGenerationSchema";
 /**
  * Conversational DDL Generation Step
  *

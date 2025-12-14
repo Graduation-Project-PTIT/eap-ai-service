@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-const erdInformationExtractSchema = z.object({
-  // JSON format - structured data
+const dbInformationExtractSchema = z.object({
   entities: z.array(
     z.object({
       name: z.string(),
@@ -23,11 +22,8 @@ const erdInformationExtractSchema = z.object({
     })
   ),
 
-  // DDL format - PostgreSQL script
   ddlScript: z.string(),
-
-  // Mermaid format - Mermaid ERD diagram syntax
   mermaidDiagram: z.string(),
 });
 
-export default erdInformationExtractSchema;
+export default dbInformationExtractSchema;

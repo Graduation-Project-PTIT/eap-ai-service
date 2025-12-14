@@ -1,18 +1,18 @@
 import { createStep } from "@mastra/core";
 import { z } from "zod";
-import erdInformationExtractSchema from "../../../../schemas/erdInformationExtractSchema";
+import dbInformationExtractSchema from "../../../../schemas/dbInformationExtractSchema";
 import { fetchAuthenticatedImage } from "../../../utils/imageFetcher";
 
-const erdInformationExtractStep = createStep({
-  id: "erdInformationExtractStep",
+const dbInformationExtractStep = createStep({
+  id: "dbInformationExtractStep",
   inputSchema: z.object({
     erdImage: z.string().url(),
     userToken: z.string().optional(),
   }),
-  outputSchema: erdInformationExtractSchema,
+  outputSchema: dbInformationExtractSchema,
   execute: async ({ inputData, mastra }) => {
-    const erdInformationExtractAgent = mastra.getAgent(
-      "erdInformationExtractAgent"
+    const dbInformationExtractAgent = mastra.getAgent(
+      "dbInformationExtractAgent"
     );
 
     try {
@@ -22,7 +22,7 @@ const erdInformationExtractStep = createStep({
         inputData.userToken
       );
 
-      const result = await erdInformationExtractAgent.generate(
+      const result = await dbInformationExtractAgent.generate(
         [
           {
             role: "user",
@@ -36,7 +36,7 @@ const erdInformationExtractStep = createStep({
           },
         ],
         {
-          output: erdInformationExtractSchema,
+          output: dbInformationExtractSchema,
         }
       );
 
@@ -48,4 +48,4 @@ const erdInformationExtractStep = createStep({
   },
 });
 
-export default erdInformationExtractStep;
+export default dbInformationExtractStep;

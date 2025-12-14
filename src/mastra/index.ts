@@ -10,22 +10,23 @@ import evaluationRoutes from "./api/modules/evaluation/evaluation.route";
 import translationRoutes from "./api/modules/translation/translation.route";
 import massEvaluationRoutes from "./api/modules/mass-evaluation/mass-evaluation.route";
 import chatbotRoutes from "./api/modules/chatbot/chatbot.route";
-import evaluationWorkflow from "./workflows/evaluation/evaluation.workflow";
 
 // Workflow import
-import evaluationSyncWorkflow from "./workflows/evaluation/evaluation-sync.workflow";
+import dbEvaluationSyncWorkflow from "./workflows/evaluation/db-evaluation-sync.workflow";
+import dbEvaluationWorkflow from "./workflows/evaluation/db-evaluation.workflow";
 import translationWorkflow from "./workflows/translation/translation.workflow";
 import dbGenerationWorkflow from "./workflows/chatbot/db-generation/db-generation.workflow";
 import chatbotWorkflow from "./workflows/chatbot/chatbot.workflow";
 
 // Agent import
-import erdInformationExtractAgent from "./agents/evaluation/erd-information-extract.agent";
-import erdEvaluationAgent from "./agents/evaluation/erd-evaluation.agent";
+import dbInformationExtractAgent from "./agents/evaluation/db-information-extract.agent";
+import dbEvaluationAgent from "./agents/evaluation/db-evaluation.agent";
 import translatorAgent from "./agents/evaluation/translator.agent";
 import ddlScriptGenerationAgent from "./agents/chatbot/db-generation/ddl-script-generation-agent";
 import schemaGenerationAgent from "./agents/chatbot/db-generation/schema-generation-agent";
 import intentClassificationAgent from "./agents/chatbot/intent-classification-agent";
 import sideQuestionAgent from "./agents/chatbot/side-question-agent";
+import diagramTypeDetectorAgent from "./agents/evaluation/diagram-type-detector.agent";
 
 // Configure storage based on environment
 const storage = process.env.DATABASE_URL
@@ -43,8 +44,8 @@ const storage = process.env.DATABASE_URL
 export const mastra = new Mastra({
   workflows: {
     // Evaluation workflows
-    evaluationWorkflow,
-    evaluationSyncWorkflow,
+    dbEvaluationSyncWorkflow,
+    dbEvaluationWorkflow,
     translationWorkflow,
     // Database generation workflows
     dbGenerationWorkflow,
@@ -52,9 +53,10 @@ export const mastra = new Mastra({
     chatbotWorkflow,
   },
   agents: {
+    diagramTypeDetectorAgent,
     // Evaluation agents
-    erdInformationExtractAgent,
-    erdEvaluationAgent,
+    dbInformationExtractAgent,
+    dbEvaluationAgent,
     translatorAgent,
     // Database generation agents
     ddlScriptGenerationAgent,

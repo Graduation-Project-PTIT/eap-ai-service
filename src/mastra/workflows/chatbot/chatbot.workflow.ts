@@ -1,6 +1,6 @@
 import { createWorkflow } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../schemas/erdInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../schemas/dbInformationGenerationSchema";
 import sideQuestionStep from "./steps/side-question-step";
 import schemaWorkflowBranchStep from "./steps/schema-workflow-branch-step";
 

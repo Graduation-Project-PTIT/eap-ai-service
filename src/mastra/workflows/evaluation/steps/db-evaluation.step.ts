@@ -1,13 +1,13 @@
 import { createStep } from "@mastra/core/workflows";
 import { z } from "zod";
-import erdInformationExtractSchema from "../../../../schemas/erdInformationExtractSchema";
+import dbInformationExtractSchema from "../../../../schemas/dbInformationExtractSchema";
 
-const erdEvaluationStep = createStep({
-  id: "erdEvaluationStep",
+const dbEvaluationStep = createStep({
+  id: "dbEvaluationStep",
   inputSchema: z.object({
     isStream: z.boolean().optional().default(false),
     questionDescription: z.string(),
-    extractedInformation: erdInformationExtractSchema,
+    extractedInformation: dbInformationExtractSchema,
     preferredFormat: z.enum(["json", "ddl", "mermaid"]).default("json"),
   }),
   outputSchema: z.object({
@@ -15,9 +15,9 @@ const erdEvaluationStep = createStep({
     score: z.number().min(0).max(100),
   }),
   execute: async ({ inputData, mastra, writer }) => {
-    const erdEvaluationAgent = mastra.getAgent("erdEvaluationAgent");
+    const dbEvaluationAgent = mastra.getAgent("dbEvaluationAgent");
 
-    console.log("RUNNING erdEvaluationStep");
+    console.log("RUNNING dbEvaluationStep");
     console.log("Preferred format:", inputData.preferredFormat);
 
     // Select the format based on user preference
@@ -44,7 +44,7 @@ const erdEvaluationStep = createStep({
 
     if (!inputData.isStream) {
       console.log("GENERATE");
-      const result = await erdEvaluationAgent.generate(
+      const result = await dbEvaluationAgent.generate(
         [
           { role: "user", content: inputData.questionDescription },
           {
@@ -65,7 +65,7 @@ const erdEvaluationStep = createStep({
         }
       );
 
-      console.log("FINISHED erdEvaluationStep");
+      console.log("FINISHED dbEvaluationStep");
 
       return {
         evaluationReport: result.object.evaluationReport,
@@ -74,7 +74,7 @@ const erdEvaluationStep = createStep({
     } else {
       console.log("STREAM");
       console.log("WRITER", writer);
-      const stream = await erdEvaluationAgent.stream(
+      const stream = await dbEvaluationAgent.stream(
         [
           { role: "user", content: inputData.questionDescription },
           {
@@ -103,7 +103,7 @@ const erdEvaluationStep = createStep({
 
       // await stream.textStream.pipeTo(writer as WritableStream);
 
-      console.log("FINISHED erdEvaluationStep");
+      console.log("FINISHED dbEvaluationStep");
 
       return {
         evaluationReport: (await stream.object).evaluationReport,
@@ -113,4 +113,4 @@ const erdEvaluationStep = createStep({
   },
 });
 
-export default erdEvaluationStep;
+export default dbEvaluationStep;
