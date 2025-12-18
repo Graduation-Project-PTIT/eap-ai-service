@@ -30,7 +30,7 @@ export interface SummarizedSearchResult {
 export async function summarizeSearchResult(
   searchQuery: string,
   fullContent: string,
-  searchType: "business" | "pattern"
+  searchType: "business" | "pattern" | "general"
 ): Promise<SummarizedSearchResult> {
   const originalWords = fullContent.split(/\s+/).filter(Boolean).length;
 
@@ -52,7 +52,9 @@ export async function summarizeSearchResult(
   const prompt =
     searchType === "business"
       ? createBusinessSummaryPrompt(searchQuery, fullContent)
-      : createPatternSummaryPrompt(searchQuery, fullContent);
+      : searchType === "pattern"
+        ? createPatternSummaryPrompt(searchQuery, fullContent)
+        : createGeneralSummaryPrompt(searchQuery, fullContent);
 
   try {
     const result = await summarizerAgent.generate(prompt);
@@ -75,14 +77,36 @@ export async function summarizeSearchResult(
   } catch (error) {
     console.error("❌ Summarization failed:", error);
 
-    // Fallback: aggressive truncation
-    const truncated = fullContent.substring(0, 2000);
+    // Improved Fallback: Extract meaningful snippets instead of blind truncation
+    // Try to extract first paragraph from each search result
+    const snippets: string[] = [];
+    let snippetLength = 0;
+    const MAX_FALLBACK_LENGTH = 2000;
+    
+    // Split by common search result separators
+    const sections = fullContent.split(/\n\n---\n\n|\n## /);
+    
+    for (const section of sections) {
+      if (snippetLength >= MAX_FALLBACK_LENGTH) break;
+      
+      // Extract first paragraph (up to first double newline or 300 chars)
+      const firstParagraph = section.split("\n\n")[0].substring(0, 300);
+      
+      if (firstParagraph.length > 50) { // Skip very short snippets
+        snippets.push(firstParagraph + "...");
+        snippetLength += firstParagraph.length;
+      }
+    }
+    
+    const fallbackText = snippets.length > 0
+      ? snippets.join("\n\n") + "\n\n[Summarization failed - showing snippets only]"
+      : fullContent.substring(0, 2000) + "\n\n[Content truncated due to summarization failure]";
+
     return {
       originalQuery: searchQuery,
-      condensedText:
-        truncated + "\n\n[Content truncated due to summarization failure]",
+      condensedText: fallbackText,
       originalWords,
-      summarizedWords: 500,
+      summarizedWords: Math.ceil(fallbackText.split(/\s+/).length),
       compressionRatio: 0.1,
     };
   }
@@ -140,11 +164,38 @@ Keep the summary under 500 words while preserving all critical technical details
 }
 
 /**
+ * Create prompt for general knowledge summarization - plain text output
+ */
+function createGeneralSummaryPrompt(query: string, content: string): string {
+  return `You are analyzing database and SQL educational content.
+
+Search Query: "${query}"
+
+Full Content:
+${content}
+
+Extract and summarize the key information to answer the user's question. Write a concise summary covering:
+
+1. Clear explanation of the concept or topic
+2. Practical examples or use cases
+3. Best practices and recommendations
+4. Common pitfalls or misconceptions
+5. Related concepts worth mentioning
+
+Format as clear, concise paragraphs. Focus on educational value and practical understanding.
+
+Ignore marketing content, navigation, unrelated topics, and overly technical implementation details.
+
+Keep the summary under 500 words while preserving the most useful information.`;
+}
+
+/**
  * Format summarized search results into LLM-consumable context
  */
 export function formatSummarizedContext(
   businessSummary: SummarizedSearchResult | null,
-  patternSummary: SummarizedSearchResult | null
+  patternSummary: SummarizedSearchResult | null,
+  generalSummary?: SummarizedSearchResult | null
 ): string {
   if (!businessSummary && !patternSummary) {
     return "";
@@ -165,6 +216,13 @@ export function formatSummarizedContext(
     context += "### 🔧 Technical Pattern Guidance\n\n";
     context += patternSummary.condensedText + "\n\n";
     context += `*Compressed: ${patternSummary.originalWords.toLocaleString()} → ${patternSummary.summarizedWords.toLocaleString()} words (${(patternSummary.compressionRatio * 100).toFixed(0)}% of original)*\n\n`;
+    context += "---\n\n";
+  }
+
+  if (generalSummary) {
+    context += "### 📚 Database Knowledge\n\n";
+    context += generalSummary.condensedText + "\n\n";
+    context += `*Compressed: ${generalSummary.originalWords.toLocaleString()} → ${generalSummary.summarizedWords.toLocaleString()} words (${(generalSummary.compressionRatio * 100).toFixed(0)}% of original)*\n\n`;
     context += "---\n\n";
   }
 

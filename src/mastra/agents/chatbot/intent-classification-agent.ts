@@ -1,5 +1,5 @@
 import { Agent } from "@mastra/core/agent";
-import { gemini20FlashLite, gemini25FlashLite } from "../../models/google";
+import { gemini20FlashLite, gemini25Flash, gemini25FlashLite } from "../../models/google";
 import z from "zod";
 import { gpt41Mini } from "../../models/openai";
 
@@ -71,7 +71,7 @@ Examples of "side-question" intent:
 
 Return: intent, schemaIntent (null for side-question), domain (null for modify/side-question), domainConfidence (0.0-1.0), and overall confidence score.`,
 
-  model: gemini25FlashLite,
+  model: gemini25Flash,
 });
 
 export default intentClassificationAgent;

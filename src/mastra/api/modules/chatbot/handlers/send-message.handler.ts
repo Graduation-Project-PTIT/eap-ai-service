@@ -29,11 +29,6 @@ const sendMessageHandler = async (c: Context) => {
     const user = c.get("user");
     const mastra = c.get("mastra");
 
-    console.log(
-      `📨 Received chat message for conversation: ${input.conversationId}`
-    );
-    console.log(`💬 Message: ${input.message}`);
-
     const validatedInput = sendMessageInputSchema.parse(input);
     const { conversationId, message, enableSearch } = validatedInput;
 
@@ -46,7 +41,6 @@ const sendMessageHandler = async (c: Context) => {
 
     // 2. If NEW conversation - create it
     if (!conversation[0]) {
-      console.log(`📝 Creating new conversation: ${conversationId}`);
       const conversationTitle =
         message.length > 50 ? message.substring(0, 50) + "..." : message;
 
@@ -59,9 +53,7 @@ const sendMessageHandler = async (c: Context) => {
           status: "active",
         })
         .returning();
-      console.log(`✅ Conversation created successfully`);
     } else {
-      console.log(`📖 Using existing conversation: ${conversationId}`);
     }
 
     // 3. Verify user ownership
@@ -83,8 +75,6 @@ const sendMessageHandler = async (c: Context) => {
       .where(eq(chatbotMessageHistory.conversationId, conversationId))
       .orderBy(asc(chatbotMessageHistory.createdAt))
       .limit(20);
-
-    console.log(`📚 Fetched ${messages.length} previous messages for context`);
 
     // 5. Classify intent first to determine if we need to include schema DDL
     const intentClassificationAgent = mastra.getAgent("intentClassificationAgent");
@@ -125,8 +115,6 @@ const sendMessageHandler = async (c: Context) => {
         domainConfidence: null,
         confidence: 0.5,
       };
-      
-      console.log(`🎯 Intent (default): ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}, Domain: ${intentClassification.domain}`);
     } else {
       intentClassification = resultWithObject.object as {
         intent: "schema" | "side-question";
@@ -136,7 +124,7 @@ const sendMessageHandler = async (c: Context) => {
         confidence: number;
       };
       
-      console.log(`🎯 Intent: ${intentClassification.intent}, Schema Intent: ${intentClassification.schemaIntent}, Domain: ${intentClassification.domain}`);
+      console.log(`🎯 ${intentClassification.intent}/${intentClassification.schemaIntent || 'none'} (domain: ${intentClassification.domain || 'none'})`);
     }
 
     // 6. Save domain on first schema message (if extracted with high confidence)
@@ -272,11 +260,6 @@ const sendMessageHandler = async (c: Context) => {
     // 10. Add current user message
     fullContext += `# Current Request\n\n${message}`;
 
-    console.log(`📝 Context built for ${intentClassification.schemaIntent || intentClassification.intent}`);
-    console.log(`📏 Full context length: ${fullContext.length} characters`);
-    console.log(`📏 Current message length: ${message.length} characters`);
-    console.log(`🏷️  Domain context: ${conversation[0].domain || 'none'}`);
-
     // 11. Insert user message
     await db.insert(chatbotMessageHistory).values({
       conversationId,
@@ -284,7 +267,6 @@ const sendMessageHandler = async (c: Context) => {
       content: message,
       enableSearch: enableSearch ?? false,
     });
-    console.log(`💾 User message saved to database`);
 
     // 12. Start the chatbot workflow with structured input
     const workflow = mastra.getWorkflow("chatbotWorkflow");
@@ -294,7 +276,6 @@ const sendMessageHandler = async (c: Context) => {
     }
 
     const run = await workflow.createRunAsync();
-    console.log(`🚀 Starting workflow run: ${run.runId}`);
 
     const workflowResult = await run.start({
       inputData: {
@@ -334,8 +315,6 @@ const sendMessageHandler = async (c: Context) => {
     // Extract the actual result from the branch step wrapper
     const rawResult = workflowResult.result as any;
 
-    console.log(`🔍 Raw workflow result keys:`, Object.keys(rawResult));
-
     // The branch result is nested under the step ID
     const result = (rawResult.schemaWorkflowBranchStep ||
       rawResult.sideQuestionStep ||
@@ -347,10 +326,6 @@ const sendMessageHandler = async (c: Context) => {
       isSideQuestion: boolean;
       isSchemaGeneration: boolean;
     };
-
-    console.log(
-      `📤 Preparing response - isSchema: ${result.isSchemaGeneration}, isSideQuestion: ${result.isSideQuestion}`
-    );
 
     // 13. Prepare response data based on workflow branch
     const responseText = result.response || result.agentResponse || "";
@@ -371,7 +346,6 @@ const sendMessageHandler = async (c: Context) => {
       runId: run.runId,
       intent: result.isSideQuestion ? "side-question" : "schema",
     });
-    console.log(`💾 Assistant message saved to database`);
 
     // 15. Update conversation
     if (result.isSchemaGeneration) {
@@ -385,7 +359,6 @@ const sendMessageHandler = async (c: Context) => {
           updatedAt: new Date(),
         })
         .where(eq(chatbotConversationHistory.id, conversationId));
-      console.log(`✅ Conversation updated with new schema`);
     } else {
       await db
         .update(chatbotConversationHistory)
@@ -395,7 +368,6 @@ const sendMessageHandler = async (c: Context) => {
           updatedAt: new Date(),
         })
         .where(eq(chatbotConversationHistory.id, conversationId));
-      console.log(`✅ Conversation timestamp updated`);
     }
 
     // 16. Return response

@@ -55,6 +55,8 @@ const schemaWorkflowBranchStep = createStep({
       inputData: {
         userMessage: inputData.userMessage,
         fullContext: inputData.fullContext,
+        schemaContext: inputData.schemaContext,
+        conversationHistory: inputData.conversationHistory,
         domain: inputData.domain,
         enableSearch: inputData.enableSearch,
       },

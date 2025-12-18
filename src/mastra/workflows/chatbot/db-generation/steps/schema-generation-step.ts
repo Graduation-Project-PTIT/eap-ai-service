@@ -3,7 +3,6 @@ import z from "zod";
 import erdInformationGenerationSchema from "../../../../../schemas/dbInformationGenerationSchema";
 import businessDomainSearchTool from "../../../../tools/business-domain-search.tool";
 import dbDesignPatternSearchTool from "../../../../tools/db-design-pattern-search.tool";
-import schemaGenerationPrompt from "../../../../agents/chatbot/db-generation/prompts/schema-generation-prompt";
 import {
   SummarizedSearchResult,
   summarizeSearchResult,
@@ -11,22 +10,29 @@ import {
 } from "../../../../utils/content-summarizer";
 
 /**
- * Conversational Schema Step (Optimized)
+ * Conversational Schema Step
  *
- * Simplified flow:
+ * Flow:
  * 1. If enableSearch = true → Execute searches in parallel
  * 2. Summarize full content (80-90% compression)
- * 3. Pass summarized context + user message to LLM
- * 4. LLM returns structured output (Zod validated)
- * 5. If entities array is empty → side question, skip memory update
- * 6. If entities array has data → schema modification, update memory
+ * 3. Build messages array with context (schema, search, history, request)
+ * 4. Pass messages to agent
+ * 5. LLM returns structured output (Zod validated)
  */
 const schemaGenerationStep = createStep({
   id: "schemaGenerationStep",
 
   inputSchema: z.object({
     userMessage: z.string().min(1).describe("User's current message"),
-    fullContext: z.string().describe("Full context for LLM"),
+    fullContext: z.string().describe("Full context for LLM (legacy, for fallback)"),
+    schemaContext: z
+      .string()
+      .nullable()
+      .describe("Current DDL schema if exists"),
+    conversationHistory: z
+      .array(z.object({ role: z.string(), content: z.string() }))
+      .optional()
+      .describe("Previous conversation messages"),
     domain: z
       .string()
       .nullable()
@@ -136,32 +142,125 @@ const schemaGenerationStep = createStep({
         };
       }
 
-      // ===== STEP 4: Build Enhanced Message for LLM =====
-      // Use fullContext (includes schema + history) for LLM, add search results if available
-      const enhancedUserMessage = searchContext
-        ? `${searchContext}\n\n${inputData.fullContext}`
-        : inputData.fullContext;
+      // ===== STEP 4: Build Messages Array =====
+      // Send context as separate user messages in the order the prompt expects:
+      // 1. Current Schema
+      // 2. Search Context
+      // 3. Conversation History
+      // 4. User Request
+      
+      const messages: any[] = [];
 
-      // Note: DDL context (if any) is injected manually via the handler
-      // No need to fetch from memory here
+      // Message 1: Current Schema (if exists)
+      if (inputData.schemaContext) {
+        messages.push({
+          role: "user",
+          content: `[CONTEXT] Current Database Schema (MODIFICATION MODE)\n\`\`\`sql\n${inputData.schemaContext}\n\`\`\``,
+        });
+      } else {
+        messages.push({
+          role: "user",
+          content: "[CONTEXT] Current Database Schema\nNone (CREATE mode)",
+        });
+      }
 
-      // ===== STEP 5: Call Agent with Structured Output =====
+      // Message 2: Search Context (if available)
+      if (searchContext) {
+        messages.push({
+          role: "user",
+          content: `[CONTEXT] Search Results\n\n${searchContext}`,
+        });
+      } else {
+        messages.push({
+          role: "user",
+          content: "[CONTEXT] Search Results\nNo search performed",
+        });
+      }
+
+      // Message 3: Conversation History (with token-based truncation)
+      if (inputData.conversationHistory?.length) {
+        const MAX_HISTORY_TOKENS = 3000; // Limit history to 3K tokens
+        const calculateTokens = (text: string) => Math.ceil(text.length / 4);
+        
+        let truncatedHistory: typeof inputData.conversationHistory = [];
+        let historyTokenCount = 0;
+        
+        // Process messages in reverse (most recent first) to keep recent context
+        for (let i = inputData.conversationHistory.length - 1; i >= 0; i--) {
+          const msg = inputData.conversationHistory[i];
+          const msgTokens = calculateTokens(msg.content);
+          
+          if (historyTokenCount + msgTokens <= MAX_HISTORY_TOKENS) {
+            truncatedHistory.unshift(msg); // Add to front
+            historyTokenCount += msgTokens;
+          } else {
+            console.log(`✂️  Truncated ${inputData.conversationHistory.length - truncatedHistory.length} old messages (would exceed ${MAX_HISTORY_TOKENS} tokens)`);
+            break;
+          }
+        }
+        
+        const formattedHistory = truncatedHistory
+          .map(
+            (msg) =>
+              `**${msg.role === "user" ? "User" : "Assistant"}**: ${msg.content}`
+          )
+          .join("\n\n");
+        
+        messages.push({
+          role: "user",
+          content: `[CONTEXT] Conversation History\n\n${formattedHistory}`,
+        });
+      } else {
+        messages.push({
+          role: "user",
+          content: "[CONTEXT] Conversation History\nNo previous messages",
+        });
+      }
+
+      // Message 4: User Request (with priority marker)
+      messages.push({
+        role: "user",
+        content: `[CRITICAL] Current Request\n\n${inputData.userMessage}`,
+      });
+
+      // ===== PHASE 3: Token Counting & Monitoring =====
+      const calculateTokens = (text: string) => Math.ceil(text.length / 4);
+      
+      const tokenBreakdown = {
+        schemaTokens: calculateTokens(messages[0].content),
+        searchTokens: calculateTokens(messages[1].content),
+        historyTokens: calculateTokens(messages[2].content),
+        requestTokens: calculateTokens(messages[3].content),
+      };
+
+      const totalInputTokens = Object.values(tokenBreakdown).reduce((a, b) => a + b, 0);
+      const systemPromptTokens = Math.ceil(8987 / 4);
+      const grandTotalTokens = totalInputTokens + systemPromptTokens;
+
+      // Concise token log
+      console.log(`📊 Tokens: ${grandTotalTokens.toLocaleString()} total (${tokenBreakdown.schemaTokens}+${tokenBreakdown.searchTokens}+${tokenBreakdown.historyTokens}+${tokenBreakdown.requestTokens}+${systemPromptTokens})`);
+      
+      // Warnings only
+      if (grandTotalTokens > 15000) {
+        console.error(`🚨 CRITICAL: Very high token usage (${grandTotalTokens} tokens)`);
+      } else if (grandTotalTokens > 8000) {
+        console.warn(`⚠️  WARNING: High token usage (${grandTotalTokens} tokens)`);
+      }
+
+      // ===== STEP 5: Call Agent with Messages Array =====
       const outputSchema = erdInformationGenerationSchema.extend({
         explanation: z
           .string()
           .describe("Detailed explanation of the schema design decisions"),
       });
 
-      const agentOptions: any = {
-        instructions: schemaGenerationPrompt,
-        // ✅ ENABLE STRUCTURED OUTPUT!
-        // The output schema should match what the LLM generates (entities + explanation)
-        output: outputSchema,
-      };
-
+      // NOTE: Do NOT override instructions - agent already has the prompt
+      // Just pass messages and output schema
       let result;
       try {
-        result = await agent.generate(enhancedUserMessage, agentOptions);
+        result = await agent.generate(messages, {
+          output: outputSchema,
+        });
       } catch (streamError) {
         throw streamError;
       }
@@ -178,30 +277,12 @@ const schemaGenerationStep = createStep({
         explanation: string;
       };
 
-      // Validate that entities array exists
       if (!parsedResponse.entities || !Array.isArray(parsedResponse.entities)) {
         throw new Error("Agent response missing entities array");
       }
 
-      // ===== STEP 9: Detect Schema Type =====
-      // Check if this is a schema response or side question
       const hasSchemaData = parsedResponse.entities.length > 0;
-
-      console.log(`📊 Schema generation result:`);
-      console.log(`   - Entities count: ${parsedResponse.entities.length}`);
-      console.log(`   - Has schema data: ${hasSchemaData}`);
-      if (parsedResponse.entities.length > 0) {
-        console.log(
-          `   - Entity names: ${parsedResponse.entities.map((e: any) => e.name).join(", ")}`
-        );
-        console.log(
-          `   - Full entities:`,
-          JSON.stringify(parsedResponse.entities, null, 2)
-        );
-      }
-
-      // Note: DDL will be saved to thread metadata in the DDL generation step
-      // This avoids duplicate storage and uses the more compact DDL format
+      console.log(`✅ Generated ${parsedResponse.entities.length} entities`);
 
       return {
         updatedSchema: { entities: parsedResponse.entities },

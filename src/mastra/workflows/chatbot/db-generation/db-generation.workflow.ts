@@ -32,7 +32,15 @@ const dbGenerationWorkflow = createWorkflow({
       .describe("The user's current message (for search tools)"),
     fullContext: z
       .string()
-      .describe("Full context including schema + history (for LLM)"),
+      .describe("Full context including schema + history (for LLM - legacy)"),
+    schemaContext: z
+      .string()
+      .nullable()
+      .describe("Current DDL schema if exists"),
+    conversationHistory: z
+      .array(z.object({ role: z.string(), content: z.string() }))
+      .optional()
+      .describe("Previous conversation messages"),
     domain: z
       .string()
       .nullable()
