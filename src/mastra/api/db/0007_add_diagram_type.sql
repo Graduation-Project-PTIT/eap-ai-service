@@ -1,0 +1,1 @@
+ALTER TABLE "evaluation_history" ADD COLUMN "diagram_type" varchar(50);

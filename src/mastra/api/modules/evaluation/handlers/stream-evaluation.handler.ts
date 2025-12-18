@@ -79,10 +79,11 @@ const streamEvaluationHandler = async (c: Context) => {
         data: JSON.stringify(chunk),
       });
 
-      // Store extracted information to db
+      // Store extracted information to db (handles both ERD and Physical DB extraction)
       if (
         chunk.type === "workflow-step-result" &&
-        chunk.payload.id === "erdInformationExtractStep" &&
+        (chunk.payload.id === "erdInformationExtractStep" ||
+          chunk.payload.id === "dbInformationExtractStep") &&
         chunk.payload.status === "success"
       ) {
         const data = chunk.payload!.output;
@@ -95,10 +96,11 @@ const streamEvaluationHandler = async (c: Context) => {
           .where(eq(evaluationHistory.id, evaluation[0].id));
       }
 
-      // Store result to db
+      // Store result to db (handles both ERD and Physical DB evaluation)
       if (
         chunk.type === "workflow-step-result" &&
-        chunk.payload.id === "erdEvaluationStep" &&
+        (chunk.payload.id === "erdEvaluationStep" ||
+          chunk.payload.id === "dbEvaluationStep") &&
         chunk.payload.status === "success"
       ) {
         const data = chunk.payload!.output;

@@ -21,6 +21,8 @@ import chatbotWorkflow from "./workflows/chatbot/chatbot.workflow";
 // Agent import
 import dbInformationExtractAgent from "./agents/evaluation/db-information-extract.agent";
 import dbEvaluationAgent from "./agents/evaluation/db-evaluation.agent";
+import erdInformationExtractAgent from "./agents/evaluation/erd-information-extract.agent";
+import erdEvaluationAgent from "./agents/evaluation/erd-evaluation.agent";
 import translatorAgent from "./agents/evaluation/translator.agent";
 import ddlScriptGenerationAgent from "./agents/chatbot/db-generation/ddl-script-generation-agent";
 import schemaGenerationAgent from "./agents/chatbot/db-generation/schema-generation-agent";
@@ -54,9 +56,12 @@ export const mastra = new Mastra({
   },
   agents: {
     diagramTypeDetectorAgent,
-    // Evaluation agents
+    // Evaluation agents - Physical DB
     dbInformationExtractAgent,
     dbEvaluationAgent,
+    // Evaluation agents - ERD (Chen notation)
+    erdInformationExtractAgent,
+    erdEvaluationAgent,
     translatorAgent,
     // Database generation agents
     ddlScriptGenerationAgent,

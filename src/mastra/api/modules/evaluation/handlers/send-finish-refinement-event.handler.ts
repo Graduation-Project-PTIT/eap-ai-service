@@ -36,11 +36,12 @@ const sendFinishRefinementEvent = async (c: Context) => {
     mastra
   );
   const run = await workflow.createRunAsync({
-    runId: evaluation.workflowRunId,
+    runId: evaluation!.workflowRunId || "",
   });
 
   run.sendEvent(body.event, {
     extractedInformation: body.data.extractedInformation,
+    diagramType: evaluation.diagramType,
   });
 
   return c.json({ success: true }, 200);

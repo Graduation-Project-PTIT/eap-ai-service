@@ -1,28 +1,38 @@
 import { createStep } from "@mastra/core";
 import { z } from "zod";
-import dbInformationExtractSchema from "../../../../schemas/dbInformationExtractSchema";
+import erdInformationExtractSchema from "../../../../schemas/erdInformationExtractSchema";
 import { fetchAuthenticatedImage } from "../../../utils/imageFetcher";
 
-const dbInformationExtractStep = createStep({
-  id: "dbInformationExtractStep",
+/**
+ * ERD Information Extract Step
+ *
+ * Extracts information from Chen notation ERD images including:
+ * - Entities (strong and weak)
+ * - Attributes (key, multivalued, derived, composite)
+ * - Relationships with participation constraints
+ */
+const erdInformationExtractStep = createStep({
+  id: "erdInformationExtractStep",
   inputSchema: z.object({
-    erdImage: z.url(),
+    erdImage: z.string().url(),
     userToken: z.string().optional(),
   }),
-  outputSchema: dbInformationExtractSchema,
+  outputSchema: erdInformationExtractSchema,
   execute: async ({ inputData, mastra }) => {
-    const dbInformationExtractAgent = mastra.getAgent(
-      "dbInformationExtractAgent"
+    const erdInformationExtractAgent = mastra.getAgent(
+      "erdInformationExtractAgent"
     );
 
     try {
+      console.log("RUNNING erdInformationExtractStep");
+
       // Fetch image with authentication
       const imageData = await fetchAuthenticatedImage(
         inputData.erdImage,
         inputData.userToken
       );
 
-      const result = await dbInformationExtractAgent.generate(
+      const result = await erdInformationExtractAgent.generate(
         [
           {
             role: "user",
@@ -36,8 +46,14 @@ const dbInformationExtractStep = createStep({
           },
         ],
         {
-          output: dbInformationExtractSchema,
+          output: erdInformationExtractSchema,
         }
+      );
+
+      console.log("FINISHED erdInformationExtractStep");
+      console.log(
+        "Extracted entities:",
+        result.object.entities.map((e: any) => e.name)
       );
 
       return result.object;
@@ -48,4 +64,4 @@ const dbInformationExtractStep = createStep({
   },
 });
 
-export default dbInformationExtractStep;
+export default erdInformationExtractStep;

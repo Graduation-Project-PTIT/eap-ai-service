@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const dbInformationExtractSchema = z.object({
+  type: z.literal("PHYSICAL_DB"),
   entities: z.array(
     z.object({
       name: z.string(),

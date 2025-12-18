@@ -23,6 +23,7 @@ export const evaluationHistory = pgTable("evaluation_history", {
   preferredFormat: varchar("preferred_format", { length: 50 }).default(
     "mermaid"
   ), // json, ddl, or mermaid
+  diagramType: varchar("diagram_type", { length: 50 }), // ERD or PHYSICAL_DB
   status: varchar("status", { length: 50 }).notNull(), // pending, running, completed, failed, waiting
   batchId: uuid("batch_id"),
   studentCode: varchar("student_code", { length: 255 }),
