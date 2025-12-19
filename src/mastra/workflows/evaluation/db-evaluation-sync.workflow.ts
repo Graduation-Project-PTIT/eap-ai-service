@@ -2,6 +2,9 @@ import { createWorkflow } from "@mastra/core";
 import { z } from "zod";
 import dbInformationExtractStep from "./steps/db-information-extract.step";
 import dbEvaluationStep from "./steps/db-evaluation.step";
+import diagramTypeDetectorStep from "./steps/diagram-type-detector.step";
+import erdInformationExtractStep from "./steps/erd-information-extract.step";
+import erdEvaluationStep from "./steps/erd-evaluation.step";
 
 const dbEvaluationSyncWorkflow = createWorkflow({
   id: "dbEvaluationSyncWorkflow",
@@ -15,6 +18,7 @@ const dbEvaluationSyncWorkflow = createWorkflow({
   outputSchema: z.object({
     evaluationReport: z.string(),
     score: z.number().min(0).max(100),
+    diagramType: z.enum(["ERD", "PHYSICAL_DB"]),
   }),
 })
   .map(async ({ inputData }) => {
@@ -23,16 +27,50 @@ const dbEvaluationSyncWorkflow = createWorkflow({
       userToken: inputData.userToken,
     };
   })
-  .then(dbInformationExtractStep)
+  .then(diagramTypeDetectorStep)
   .map(async ({ inputData, getInitData }) => {
+    console.log("DB EVALUATION SYNC WORKFLOW - MAPPED", inputData);
+    return {
+      diagramType: inputData.diagramType,
+      erdImage: getInitData().erdImage,
+      userToken: getInitData().userToken,
+    };
+  })
+  .branch([
+    [
+      async ({ inputData }) => inputData.diagramType === "PHYSICAL_DB",
+      dbInformationExtractStep,
+    ],
+    [
+      async ({ inputData }) => inputData.diagramType === "ERD",
+      erdInformationExtractStep,
+    ],
+  ])
+  .map(async ({ inputData, getInitData }) => {
+    console.log("DB EVALUATION SYNC WORKFLOW - FINAL MAPPED", inputData);
+
+    const data = inputData.dbInformationExtractStep
+      ? inputData.dbInformationExtractStep
+      : inputData.erdInformationExtractStep;
+
     return {
       isStream: getInitData().isStream,
       questionDescription: getInitData().questionDescription,
-      extractedInformation: inputData,
+      extractedInformation: data,
       preferredFormat: getInitData().preferredFormat,
+      diagramType: data.type,
     };
   })
-  .then(dbEvaluationStep)
+  .branch([
+    [
+      async ({ inputData }) => inputData.diagramType === "PHYSICAL_DB",
+      dbEvaluationStep,
+    ],
+    [
+      async ({ inputData }) => inputData.diagramType === "ERD",
+      erdEvaluationStep,
+    ],
+  ])
   .commit();
 
 export default dbEvaluationSyncWorkflow;

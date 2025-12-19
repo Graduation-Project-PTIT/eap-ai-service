@@ -65,6 +65,7 @@ const erdInformationExtractPrompt = `
 
   Return an object with this structure:
   {
+    "type": "ERD",
     "entities": [
       {
         "name": "entity_name",
@@ -90,7 +91,18 @@ const erdInformationExtractPrompt = `
         "description": "Entity description" // Optional
       }
     ],      // Array of entities with their attributes
-    "relationships": [...], // Array of explicit relationships
+    "relationships": [
+      {
+        "name": "relationship_name",
+        "sourceEntity": "source_entity_name",
+        "targetEntity": "target_entity_name",
+        "relationType": "one-to-one" | "one-to-many" | "many-to-one" | "many-to-many",
+        "sourceParticipation": "total" | "partial", // Optional
+        "targetParticipation": "total" | "partial", // Optional
+        "attributes": [...], // Optional attributes of the relationship
+        "description": "Relationship description" // Optional
+      }
+    ], // Array of explicit relationships
   }
 
   Ensure all extracted information is consistent across the structured data and Mermaid diagram.
