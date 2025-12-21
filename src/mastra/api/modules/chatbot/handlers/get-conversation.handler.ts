@@ -39,16 +39,7 @@ const getConversationHandler = async (c: Context) => {
 
   // 4. Get all messages for this conversation
   const messages = await db
-    .select({
-      id: chatbotMessageHistory.id,
-      role: chatbotMessageHistory.role,
-      content: chatbotMessageHistory.content,
-      schemaSnapshot: chatbotMessageHistory.schemaSnapshot,
-      ddlSnapshot: chatbotMessageHistory.ddlSnapshot,
-      runId: chatbotMessageHistory.runId,
-      intent: chatbotMessageHistory.intent,
-      createdAt: chatbotMessageHistory.createdAt,
-    })
+    .select()
     .from(chatbotMessageHistory)
     .where(eq(chatbotMessageHistory.conversationId, conversationId))
     .orderBy(asc(chatbotMessageHistory.createdAt));
@@ -72,6 +63,7 @@ const getConversationHandler = async (c: Context) => {
     exists: true,
     schema: conversation[0].currentSchema,
     currentDdl: conversation[0].currentDdl, // Include current DDL from conversation
+    erdSchema: conversation[0].currentErdSchema,
     thread: {
       title: conversation[0].conversationTitle || "",
       createdAt: conversation[0].createdAt?.toISOString() || "",

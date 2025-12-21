@@ -16,6 +16,7 @@ import dbEvaluationSyncWorkflow from "./workflows/evaluation/db-evaluation-sync.
 import dbEvaluationWorkflow from "./workflows/evaluation/db-evaluation.workflow";
 import translationWorkflow from "./workflows/translation/translation.workflow";
 import dbGenerationWorkflow from "./workflows/chatbot/db-generation/db-generation.workflow";
+import erdGenerationWorkflow from "./workflows/chatbot/erd-generation/erd-generation.workflow";
 import chatbotWorkflow from "./workflows/chatbot/chatbot.workflow";
 
 // Agent import
@@ -26,6 +27,7 @@ import erdEvaluationAgent from "./agents/evaluation/erd-evaluation.agent";
 import translatorAgent from "./agents/evaluation/translator.agent";
 import ddlScriptGenerationAgent from "./agents/chatbot/db-generation/ddl-script-generation-agent";
 import schemaGenerationAgent from "./agents/chatbot/db-generation/schema-generation-agent";
+import erdGenerationAgent from "./agents/chatbot/erd-generation/erd-generation-agent";
 import intentClassificationAgent from "./agents/chatbot/intent-classification-agent";
 import sideQuestionAgent from "./agents/chatbot/side-question-agent";
 import diagramTypeDetectorAgent from "./agents/evaluation/diagram-type-detector.agent";
@@ -51,6 +53,8 @@ export const mastra = new Mastra({
     translationWorkflow,
     // Database generation workflows
     dbGenerationWorkflow,
+    // ERD generation workflows
+    erdGenerationWorkflow,
     // Chatbot workflow
     chatbotWorkflow,
   },
@@ -66,6 +70,8 @@ export const mastra = new Mastra({
     // Database generation agents
     ddlScriptGenerationAgent,
     schemaGenerationAgent,
+    // ERD generation agents
+    erdGenerationAgent,
     // Chatbot agents
     intentClassificationAgent,
     sideQuestionAgent,

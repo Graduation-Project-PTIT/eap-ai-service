@@ -1,6 +1,7 @@
 import { createStep } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
+import dbInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
 
 /**
  * Side Question Handling Step
@@ -22,17 +23,20 @@ const sideQuestionStep = createStep({
       .optional(),
     intent: z.enum(["schema", "side-question"]),
     schemaIntent: z.enum(["create", "modify"]).nullable(),
+    diagramType: z.enum(["ERD", "PHYSICAL_DB"]).nullable(),
     confidence: z.number(),
     enableSearch: z.boolean().optional().default(true),
   }),
 
   outputSchema: z.object({
     response: z.string().describe("The assistant's response"),
-    updatedSchema: erdInformationGenerationSchema.optional(),
+    updatedSchema: dbInformationGenerationSchema.optional(),
+    updatedErdSchema: erdInformationGenerationSchema.optional(),
     ddlScript: z.string().optional(),
     agentResponse: z.string().optional(),
     isSideQuestion: z.boolean(),
     isSchemaGeneration: z.boolean(),
+    isErdGeneration: z.boolean(),
   }),
 
   execute: async ({ inputData, mastra }) => {
@@ -57,10 +61,12 @@ const sideQuestionStep = createStep({
       return {
         response,
         updatedSchema: undefined,
+        updatedErdSchema: undefined,
         ddlScript: undefined,
         agentResponse: undefined,
         isSideQuestion: true,
         isSchemaGeneration: false,
+        isErdGeneration: false,
       };
     } catch (error) {
       console.error("❌ Side question handling error:", error);
@@ -70,10 +76,12 @@ const sideQuestionStep = createStep({
         response:
           "I apologize, but I encountered an error while processing your question. Please try again or rephrase your question.",
         updatedSchema: undefined,
+        updatedErdSchema: undefined,
         ddlScript: undefined,
         agentResponse: undefined,
         isSideQuestion: true,
         isSchemaGeneration: false,
+        isErdGeneration: false,
       };
     }
   },

@@ -1,8 +1,10 @@
 import { createWorkflow } from "@mastra/core";
 import z from "zod";
-import erdInformationGenerationSchema from "../../../schemas/dbInformationGenerationSchema";
+import dbInformationGenerationSchema from "../../../schemas/dbInformationGenerationSchema";
+import erdInformationGenerationSchema from "../../../schemas/erdInformationGenerationSchema";
 import sideQuestionStep from "./steps/side-question-step";
 import schemaWorkflowBranchStep from "./steps/schema-workflow-branch-step";
+import erdWorkflowBranchStep from "./steps/erd-workflow-branch-step";
 
 /**
  * Chatbot Workflow
@@ -12,24 +14,28 @@ import schemaWorkflowBranchStep from "./steps/schema-workflow-branch-step";
  *
  * Routes:
  * - Side questions → answered directly
- * - Schema requests → routed to db-generation workflow
+ * - Schema requests with ERD type → routed to erd-generation workflow
+ * - Schema requests with PHYSICAL_DB type → routed to db-generation workflow
  *
  * Flow:
  * 1. Receive pre-classified intent from handler
- * 2. Branch based on intent:
+ * 2. Branch based on intent and diagramType:
  *    - If "side-question" → Side Question Step → End
- *    - If "schema" → Schema Workflow Branch → End
+ *    - If "schema" + "ERD" → ERD Workflow Branch → End
+ *    - If "schema" + "PHYSICAL_DB" → Schema Workflow Branch → End
  */
 
 // Both branch outputs must have the same schema (Mastra requirement)
 // All fields are present in both branches, with optional values where needed
 const branchOutputSchema = z.object({
   response: z.string().optional(),
-  updatedSchema: erdInformationGenerationSchema.optional(),
+  updatedSchema: dbInformationGenerationSchema.optional(), // Physical DB schema
+  updatedErdSchema: erdInformationGenerationSchema.optional(), // ERD schema
   ddlScript: z.string().optional(),
   agentResponse: z.string().optional(),
   isSideQuestion: z.boolean(),
   isSchemaGeneration: z.boolean(),
+  isErdGeneration: z.boolean().optional(),
 });
 
 const chatbotWorkflow = createWorkflow({
@@ -63,6 +69,10 @@ const chatbotWorkflow = createWorkflow({
       .enum(["create", "modify"])
       .nullable()
       .describe("Sub-intent for schema operations"),
+    diagramType: z
+      .enum(["ERD", "PHYSICAL_DB"])
+      .nullable()
+      .describe("Type of diagram to generate"),
     confidence: z
       .number()
       .min(0)
@@ -92,15 +102,27 @@ const chatbotWorkflow = createWorkflow({
       },
       sideQuestionStep,
     ],
-    // If intent is "schema" → run schema workflow
+    // If intent is "schema" and diagramType is "ERD" → run ERD workflow
     [
       async ({
         inputData,
       }: {
-        inputData: { intent: string; [key: string]: any };
+        inputData: { intent: string; diagramType: string | null; [key: string]: any };
       }) => {
-        console.log(`🔀 Branch condition check - intent: ${inputData.intent}`);
-        return inputData.intent === "schema";
+        console.log(`🔀 Branch condition check - intent: ${inputData.intent}, diagramType: ${inputData.diagramType}`);
+        return inputData.intent === "schema" && inputData.diagramType === "ERD";
+      },
+      erdWorkflowBranchStep,
+    ],
+    // If intent is "schema" and diagramType is "PHYSICAL_DB" → run schema workflow
+    [
+      async ({
+        inputData,
+      }: {
+        inputData: { intent: string; diagramType: string | null; [key: string]: any };
+      }) => {
+        console.log(`🔀 Branch condition check - intent: ${inputData.intent}, diagramType: ${inputData.diagramType}`);
+        return inputData.intent === "schema" && inputData.diagramType === "PHYSICAL_DB";
       },
       schemaWorkflowBranchStep,
     ],

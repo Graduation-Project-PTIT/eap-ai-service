@@ -16,8 +16,10 @@ export const chatbotConversationHistory = pgTable(
     conversationTitle: text("conversation_title"),
     domain: varchar("domain", { length: 255 }), // e.g., "hotel booking", "e-commerce"
     domainConfidence: numeric("domain_confidence", { precision: 3, scale: 2 }), // 0.00-1.00
-    currentSchema: jsonb("current_schema"),
+    currentSchema: jsonb("current_schema"), // Physical DB schema
+    currentErdSchema: jsonb("current_erd_schema"), // ERD (Chen notation) schema
     currentDdl: text("current_ddl"),
+    diagramType: varchar("diagram_type", { length: 20 }), // 'ERD' | 'PHYSICAL_DB'
     lastRunId: varchar("last_run_id", { length: 255 }),
     status: varchar("status", { length: 50 }).notNull().default("active"), // active, completed, archived
     createdAt: timestamp("created_at").defaultNow(),

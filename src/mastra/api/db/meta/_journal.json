@@ -57,6 +57,13 @@
       "when": 1765820653622,
       "tag": "0007_add_diagram_type",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766198549093,
+      "tag": "0008_add_erd_to_chatbot",
+      "breakpoints": true
     }
   ]
 }

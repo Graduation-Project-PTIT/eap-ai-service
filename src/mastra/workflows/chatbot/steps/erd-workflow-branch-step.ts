@@ -1,16 +1,16 @@
 import { createStep } from "@mastra/core";
 import z from "zod";
-import dbInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
 import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
+import dbInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
 
 /**
- * Schema Workflow Branch Step
+ * ERD Workflow Branch Step
  *
- * This step invokes the existing dbGenerationWorkflow
- * when the intent is classified as "schema" with diagramType "PHYSICAL_DB".
+ * This step invokes the erdGenerationWorkflow
+ * when the intent is classified as "schema" with diagramType "ERD".
  */
-const schemaWorkflowBranchStep = createStep({
-  id: "schemaWorkflowBranchStep",
+const erdWorkflowBranchStep = createStep({
+  id: "erdWorkflowBranchStep",
 
   inputSchema: z.object({
     userMessage: z.string().describe("The user's current message"),
@@ -29,8 +29,8 @@ const schemaWorkflowBranchStep = createStep({
 
   outputSchema: z.object({
     response: z.string().optional(),
-    updatedSchema: dbInformationGenerationSchema.optional(), // Physical DB schema
-    updatedErdSchema: erdInformationGenerationSchema.optional(), // ERD schema (not used here)
+    updatedSchema: dbInformationGenerationSchema.optional(), // Physical DB schema (not used for ERD)
+    updatedErdSchema: erdInformationGenerationSchema.optional(), // ERD schema
     ddlScript: z.string().optional(),
     agentResponse: z.string().optional(),
     isSideQuestion: z.boolean(),
@@ -39,16 +39,16 @@ const schemaWorkflowBranchStep = createStep({
   }),
 
   execute: async ({ inputData, mastra }) => {
-    console.log(`🏗️ Running Physical DB schema generation workflow...`);
+    console.log(`🏗️ Running ERD generation workflow...`);
     console.log(`📏 User message: ${inputData.userMessage.length} chars`);
     console.log(`📏 Full context: ${inputData.fullContext.length} chars`);
     console.log(`🏷️  Domain: ${inputData.domain || "none"}`);
 
-    // Get and execute the dbGenerationWorkflow
-    const workflow = mastra.getWorkflow("dbGenerationWorkflow");
+    // Get and execute the erdGenerationWorkflow
+    const workflow = mastra.getWorkflow("erdGenerationWorkflow");
 
     if (!workflow) {
-      throw new Error("DB generation workflow not found");
+      throw new Error("ERD generation workflow not found");
     }
 
     // Create a new workflow run
@@ -65,28 +65,30 @@ const schemaWorkflowBranchStep = createStep({
     });
 
     if (result.status !== "success") {
-      throw new Error(`Schema workflow failed: ${result.status}`);
+      throw new Error(`ERD workflow failed: ${result.status}`);
     }
 
     const workflowResult = result.result as {
-      updatedSchema: any;
-      ddlScript: string;
+      updatedErdSchema: any;
       agentResponse: string;
     };
 
-    console.log(`✅ Physical DB schema workflow completed`);
+    console.log(`✅ ERD workflow completed`);
+    console.log(`   - Entities: ${workflowResult.updatedErdSchema?.entities?.length || 0}`);
+    console.log(`   - Relationships: ${workflowResult.updatedErdSchema?.relationships?.length || 0}`);
 
     return {
       response: workflowResult.agentResponse,
-      updatedSchema: workflowResult.updatedSchema,
-      updatedErdSchema: undefined, // No ERD schema for Physical DB
-      ddlScript: workflowResult.ddlScript,
+      updatedSchema: undefined, // No Physical DB schema for ERD
+      updatedErdSchema: workflowResult.updatedErdSchema,
+      ddlScript: undefined, // No DDL for ERD
       agentResponse: workflowResult.agentResponse,
       isSideQuestion: false,
-      isSchemaGeneration: true,
-      isErdGeneration: false,
+      isSchemaGeneration: false,
+      isErdGeneration: true,
     };
   },
 });
 
-export default schemaWorkflowBranchStep;
+export default erdWorkflowBranchStep;
+
