@@ -68,11 +68,17 @@ class MassEvaluationService {
       });
 
       // Check if workflow succeeded
-      if (workflowOutput.status === "success" && workflowOutput.result) {
+      if (workflowOutput.status === "success") {
         // Extract result from workflow output
-        const result = workflowOutput.result;
+        let result;
 
-        // Update datbase
+        if (workflowOutput?.result?.erdEvaluationStep) {
+          result = workflowOutput.result.erdEvaluationStep;
+        } else if (workflowOutput?.result?.dbEvaluationStep) {
+          result = workflowOutput.result.dbEvaluationStep;
+        }
+
+        // Update database
         await db
           .update(evaluationHistory)
           .set({
@@ -81,6 +87,30 @@ class MassEvaluationService {
             evaluationReport: result.evaluationReport,
           })
           .where(eq(evaluationHistory.id, taskId));
+
+        // Get all tasks score of batch
+        const tasks = await db
+          .select({
+            score: evaluationHistory.score,
+          })
+          .from(evaluationHistory)
+          .where(eq(evaluationHistory.batchId, batchId));
+
+        // Calculate average score
+        const totalScore = tasks.reduce(
+          (sum, task) => sum + (task.score || 0),
+          0
+        );
+        const averageScore = totalScore / tasks.length;
+
+        // Update batch
+        await db
+          .update(massEvaluationBatch)
+          .set({
+            status: "completed",
+            averageScore: averageScore,
+          })
+          .where(eq(massEvaluationBatch.id, batchId));
       } else {
         // Workflow failed
         await db
