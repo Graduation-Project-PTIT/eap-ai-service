@@ -38,15 +38,20 @@ interface IntentClassification {
 }
 
 const sendMessageHandler = async (c: Context) => {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
     const input = await c.req.json<SendMessageInput>();
     const user = c.get("user");
     const mastra = c.get("mastra");
 
-    console.log(
-      `📨 Received chat message for conversation: ${input.conversationId}`
-    );
-    console.log(`💬 Message: ${input.message}`);
+    console.log(`\n🚀 [${requestId}] ========== CHAT REQUEST START ==========`);
+    console.log(`⏱️  [${requestId}] Timestamp: ${new Date().toISOString()}`);
+    console.log(`👤 [${requestId}] User: ${user.sub}`);
+    console.log(`📨 [${requestId}] Conversation: ${input.conversationId}`);
+    console.log(`💬 [${requestId}] Message: ${input.message}`);
+    console.log(`🔍 [${requestId}] Enable Search: ${input.enableSearch}`);
 
     const validatedInput = sendMessageInputSchema.parse(input);
     const { conversationId, message, enableSearch } = validatedInput;
@@ -395,79 +400,96 @@ const sendMessageHandler = async (c: Context) => {
     if (isConversionRequest) {
       console.log(`🔄 Converting ERD to Physical DB schema...`);
 
-      // Import and execute the conversion step
-      const erdToPhysicalStep = await import(
-        "../../../../workflows/chatbot/conversion/erd-to-physical-step"
-      ).then((m) => m.default);
+      const agent = mastra.getAgent("schemaGenerationAgent");
+      const ddlAgent = mastra.getAgent("ddlScriptGenerationAgent");
 
-      const conversionWorkflow = mastra.getWorkflow("dbGenerationWorkflow");
-      if (!conversionWorkflow) {
-        return c.json({ error: "Conversion workflow not found" }, 500);
-      }
-
-      // Use the schema generation agent to convert
-      const conversionResult = await (async () => {
-        const agent = mastra.getAgent("schemaGenerationAgent");
-        const ddlAgent = mastra.getAgent("ddlScriptGenerationAgent");
-
-        const conversionPrompt = `Convert the following ERD schema (Chen notation) to a Physical Database schema.
+      // Build comprehensive conversion prompt
+      const conversionPrompt = `Convert the following ERD schema (Chen notation) to a Physical Database schema.
 
 ## Conversion Rules:
 1. **Multivalued Attributes** → Create separate child/junction tables
+   - e.g., User.PhoneNumbers → user_phone_numbers table with FK to users
+   
 2. **Composite Attributes** → Flatten to individual columns
+   - e.g., Address (Street, City, Zip) → street, city, zip columns
+   
 3. **Derived Attributes** → EXCLUDE from physical schema
+   - These are computed at query time (e.g., Age from BirthDate)
+   
 4. **Weak Entities** → Regular tables with composite FK to identifying entity
+   - Include the FK as part of primary key
+   
 5. **Relationships** → Foreign key constraints with proper cardinality
+   - many-to-many → junction table
+   - one-to-many → FK on the "many" side
+   - one-to-one → FK with UNIQUE constraint
+   
+6. **Relationship Attributes** → Add to junction table (for M:N) or the appropriate entity table
+
+## SQL Data Types Mapping:
+- String, Text → VARCHAR(255) or TEXT
+- Number, Integer → INTEGER
+- Decimal → DECIMAL(10,2)
+- Date → DATE
+- DateTime → TIMESTAMP
+- Boolean → BOOLEAN
+- Email → VARCHAR(255)
+- Phone → VARCHAR(20)
 
 ## ERD Schema to Convert:
 \`\`\`json
 ${JSON.stringify(conversation[0].currentErdSchema, null, 2)}
 \`\`\`
 
-Generate a Physical Database schema. Return the schema with all tables, columns, primary keys, foreign keys, and proper SQL types.`;
+Generate a Physical Database schema following dbInformationGenerationSchema format.
+Return the complete schema with all tables, columns, primary keys, foreign keys, and proper SQL types.`;
 
-        const dbInformationGenerationSchema = await import(
-          "../../../../../schemas/dbInformationGenerationSchema"
-        ).then((m) => m.default);
-        const outputSchema = dbInformationGenerationSchema.extend({
-          explanation: (await import("zod")).z.string(),
-        });
+      const dbInformationGenerationSchema = await import(
+        "../../../../../schemas/dbInformationGenerationSchema"
+      ).then((m) => m.default);
+      const outputSchema = dbInformationGenerationSchema.extend({
+        explanation: (await import("zod")).z.string(),
+      });
 
-        const schemaResult = await agent.generate(conversionPrompt, {
-          output: outputSchema,
-        });
-        const schemaObject = (schemaResult as any).object;
+      const schemaResult = await agent.generate(conversionPrompt, {
+        output: outputSchema,
+      });
+      const schemaObject = (schemaResult as any).object;
 
-        // Generate DDL
-        const ddlResult = await ddlAgent.generate([
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify({ entities: schemaObject.entities }),
-              },
-            ],
-          },
-        ]);
+      if (!schemaObject) {
+        return c.json(
+          { error: "Failed to generate physical schema from ERD" },
+          500
+        );
+      }
 
-        let ddlScript = ddlResult.text?.trim() || "";
-        if (ddlScript.startsWith("```sql")) {
-          ddlScript = ddlScript
-            .replace(/^```sql\n?/, "")
-            .replace(/\n?```$/, "");
-        } else if (ddlScript.startsWith("```")) {
-          ddlScript = ddlScript.replace(/^```\n?/, "").replace(/\n?```$/, "");
-        }
+      // Generate DDL from physical schema
+      const ddlResult = await ddlAgent.generate([
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ entities: schemaObject.entities }),
+            },
+          ],
+        },
+      ]);
 
-        return {
-          physicalSchema: { entities: schemaObject.entities },
-          ddlScript,
-          agentResponse:
-            schemaObject.explanation +
-            "\n\n---\n\n✅ **Conversion complete!** Your ERD has been successfully converted to a Physical Database schema.",
-        };
-      })();
+      let ddlScript = ddlResult.text?.trim() || "";
+      if (ddlScript.startsWith("```sql")) {
+        ddlScript = ddlScript.replace(/^```sql\n?/, "").replace(/\n?```$/, "");
+      } else if (ddlScript.startsWith("```")) {
+        ddlScript = ddlScript.replace(/^```\n?/, "").replace(/\n?```$/, "");
+      }
+
+      const conversionResult = {
+        physicalSchema: { entities: schemaObject.entities },
+        ddlScript,
+        agentResponse:
+          schemaObject.explanation +
+          "\n\n---\n\n✅ **Conversion complete!** Your ERD has been successfully converted to a Physical Database schema.",
+      };
 
       // Save messages and update conversation
       await db.insert(chatbotMessageHistory).values([
@@ -677,9 +699,45 @@ Generate a Physical Database schema. Return the schema with all tables, columns,
       diagramType,
       runId: run.runId,
     });
+    
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+    const seconds = (totalTime / 1000).toFixed(2);
+    
+    console.log(`\n✅ [${requestId}] ========== CHAT REQUEST COMPLETE ==========`);
+    console.log(`⏱️  [${requestId}] Total Time: ${totalTime}ms (${seconds}s)`);
+    console.log(`📊 [${requestId}] Response Preview:`, {
+      success: true,
+      blocked: run.blocked,
+      hasSchema: !!run.schemaJson,
+      hasErdSchema: !!run.erdSchemaJson,
+      hasDdl: !!run.ddl,
+      diagramType: run.diagramType,
+    });
+    console.log(`🏁 [${requestId}] ============================================\n`);
+    
+    return c.json({
+      success: true,
+      conversationId,
+      response: run.response,
+      schema: run.schemaJson,
+      erdSchema: run.erdSchemaJson,
+      ddl: run.ddl,
+      blocked: run.blocked,
+      diagramType: run.diagramType,
+      runId: run.runId,
+    });
   } catch (error: any) {
-    console.error("❌ Error in sendMessageHandler:", error);
-    console.error("❌ Error stack:", error.stack);
+    const endTime = Date.now();
+    const totalTime = endTime - startTime;
+    const seconds = (totalTime / 1000).toFixed(2);
+    
+    console.error(`\n❌ [${requestId}] ========== CHAT REQUEST FAILED ==========`);
+    console.error(`⏱️  [${requestId}] Failed after: ${totalTime}ms (${seconds}s)`);
+    console.error(`❌ [${requestId}] Error:`, error.message);
+    console.error(`❌ [${requestId}] Stack:`, error.stack);
+    console.error(`🏁 [${requestId}] ============================================\n`);
+    
     return c.json(
       {
         success: false,

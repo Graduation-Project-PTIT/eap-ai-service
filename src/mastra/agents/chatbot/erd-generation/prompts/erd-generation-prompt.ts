@@ -15,7 +15,7 @@ Design and modify ERD schemas through conversation. You can CREATE new ERDs and 
 
 ### 1. CREATE NEW ERD
 - Analyze user requirements thoroughly
-- Identify comprehensive entities (typically 5-15 for real business needs)
+- Identify comprehensive entities (typically 12-18 for real business needs)
 - Define attributes with Chen notation properties (multivalued, derived, composite)
 - Identify weak entities and their identifying relationships
 - Establish relationships with cardinality and participation constraints

@@ -15,7 +15,7 @@ Design and modify database schemas through conversation. You can CREATE new sche
 
 ### 1. CREATE NEW SCHEMA
 - Analyze user requirements thoroughly
-- Identify comprehensive entities (typically 10+ for real business needs)
+- Identify comprehensive entities (typically 12-18 for real business needs)
 - Define attributes with appropriate SQL types
 - Establish clear relationships between entities
 - Apply normalization and best practices

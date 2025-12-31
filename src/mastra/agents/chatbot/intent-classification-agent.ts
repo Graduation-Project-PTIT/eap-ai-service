@@ -47,7 +47,7 @@ DIAGRAM TYPE DETECTION (only for "schema" intent):
 Determine if user wants ERD (conceptual/Chen notation) or Physical DB (tables/SQL):
 
 **PHYSICAL_DB triggers** (user wants database tables/SQL):
-- "database schema", "tables", "DDL", "SQL", "create tables", "physical"
+- "database", "database schema", "tables", "DDL", "SQL", "create tables", "physical"
 - "foreign keys", "primary keys", "columns", "data types"
 - "SQL types", "VARCHAR", "INTEGER", "constraints"
 - Any mention of SQL-specific concepts
@@ -67,7 +67,7 @@ Examples:
 - "Generate SQL schema" → diagramType: "PHYSICAL_DB"
 - "Create entity relationship diagram" → diagramType: "ERD"
 - "Design a schema for hospital" → diagramType: "ERD" (ambiguous, default to ERD)
-- "Build a todo app database" → diagramType: "ERD" (ambiguous, default to ERD)
+- "Build a todo app database" → diagramType: "PHYSICAL_DB"
 - "Create tables with foreign keys" → diagramType: "PHYSICAL_DB"
 - "Design conceptual model for library" → diagramType: "ERD"
 - "Convert ERD to physical database" → diagramType: "PHYSICAL_DB"
