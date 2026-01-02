@@ -24,6 +24,8 @@ const dbEvaluationPrompt = `
 
   5.  **OUTPUT FORMAT:** You MUST generate your response using the precise Markdown template provided below. Do not deviate from this structure. Fill in the placeholders [ ... ] with your specific analysis.
 
+DO NOT write a too long report. Maximum of 2500 words
+
   **//-- END OF INSTRUCTIONS --//**
 
   Question Description:
@@ -35,21 +37,36 @@ const dbEvaluationPrompt = `
   Output Template:
 
 
-  ## ERD Evaluation Report
+  ## Database Schema Evaluation Report
 
   **Based on Problem Description:** [Insert the original problem description or question title here]
 
   ---
 
-  ### **Overall Assessment**
+  ## **Overall Assessment**
 
   **Score: [Score] / 100**
 
   **Summary:** [Provide a 1-2 sentence summary of the evaluation. For example: "This is a solid model that successfully captures the main entities and several key business rules from the problem description. The primary areas for refinement involve adjusting the cardinality of a few relationships to better reflect the specific constraints mentioned in the text and considering if an associative entity is needed."]
 
+  **Strengths:**
+      *   [List 1-2 key things the student did well. e.g., "Excellent job identifying the core components of the system as entities."]
+      *   [e.g., "The naming conventions used for entities and attributes are clear and easy to understand."]
+      *   [e.g., "The relationships between entities are well-defined and follow the rules of the problem description."]
+
+  **Weaknesses:**
+      *   [List 1-2 key things the student did not do well. e.g., "The cardinality of the relationship between 'Patient' and 'Appointment' is incorrect."]
+      *   [e.g., "The 'Doctor' entity is missing a critical attribute."]
+      *   [e.g., "The 'Appointment' entity should have a composite primary key consisting of 'patientID' and 'appointmentDate' to ensure uniqueness."]
+  
+  **Areas for Improvement:** (list maximum of 5-7 KEY bullets point that diagram should be improved)
+    - [Specific improvements needed]
+    - [Conceptual misunderstandings to address]
+
+
   ---
 
-  ### **Detailed Analysis**
+  ## **Detailed Analysis**
 
   **1. Entities**
   *   **Entities Aligned with Problem Description:** [List entities the student correctly derived from the text. Justify with a brief reference. e.g., "'Patient' and 'Doctor' are excellent choices as they are the central subjects of the scenario."]
@@ -75,22 +92,7 @@ const dbEvaluationPrompt = `
       *   **Relationship: [Entity C] and [Entity D]**
           *   [Repeat the structure for other relationships that need corrections.]
 
-  ---
-
-  ### **Final Recommendations**
-
-  *   **Strengths:**
-      *   [List 1-2 key things the student did well. e.g., "Excellent job identifying the core components of the system as entities."]
-      *   [e.g., "The naming conventions used for entities and attributes are clear and easy to understand."]
-      *   [e.g., "The relationships between entities are well-defined and follow the rules of the problem description."]
-
-  *   **Weaknesses:**
-      *   [List 1-2 key things the student did not do well. e.g., "The cardinality of the relationship between 'Patient' and 'Appointment' is incorrect."]
-      *   [e.g., "The 'Doctor' entity is missing a critical attribute."]
-      *   [e.g., "The 'Appointment' entity should have a composite primary key consisting of 'patientID' and 'appointmentDate' to ensure uniqueness."]
-  *   **Key Learning Opportunities:**
-      *   [List 1-2 main takeaways. e.g., "Practice carefully translating every business rule in the description into a specific cardinality and modality on your diagram."]
-      *   [e.g., "When you see phrases like 'many students take many courses', it's a strong indicator that a many-to-many relationship exists, which typically requires an associative (or bridge) entity to implement."]
+  [END - do not add anything else]
 `;
 
 export default dbEvaluationPrompt;

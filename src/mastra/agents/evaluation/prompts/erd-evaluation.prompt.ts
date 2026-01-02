@@ -65,6 +65,8 @@ const erdEvaluationPrompt = `
      * Suggest improvements with explanations
      * Highlight what was done well
 
+  DO NOT write a too long report. Maximum of 2500 words
+
   **//-- OUTPUT FORMAT --//**
 
   ## ERD Evaluation Report (Chen Notation)
@@ -73,15 +75,26 @@ const erdEvaluationPrompt = `
 
   ---
 
-  ### **Overall Assessment**
+  ## **Overall Assessment**
 
   **Score: [Score] / 100**
 
   **Summary:** [2-3 sentence summary of the evaluation]
 
+  **Strengths:**
+    - [What the student did well]
+    - [Good modeling decisions]
+
+  **Weaknesses:**
+    - [What the student did not do well]
+
+  **Areas for Improvement:** (list maximum of 5-7 KEY bullets point that diagram should be improved)
+    - [Specific improvements needed]
+    - [Conceptual misunderstandings to address]
+
   ---
 
-  ### **Detailed Analysis**
+  ## **Detailed Analysis**
 
   **1. Entity Classification (X/20)**
   * **Strong Entities Identified:** [List correctly identified strong entities with justification]
@@ -110,23 +123,8 @@ const erdEvaluationPrompt = `
     - [Entity] has [total/partial] participation in [relationship] because "[quote from problem]"
   * **Missing or Incorrect:**
     - [Entity] should have [total/partial] participation because the problem states "[quote]"
-
-  ---
-
-  ### **Final Recommendations**
-
-  * **Strengths:**
-    - [What the student did well]
-    - [Good modeling decisions]
-
-  * **Areas for Improvement:**
-    - [Specific improvements needed]
-    - [Conceptual misunderstandings to address]
-
-  * **Key Learning Points:**
-    - [Important ERD concepts to review]
-    - [Chen notation conventions to remember]
+  
+  [END - do not add anything else]
 `;
 
 export default erdEvaluationPrompt;
-

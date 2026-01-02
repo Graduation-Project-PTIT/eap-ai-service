@@ -22,17 +22,6 @@ interface WorkflowStepResult {
   };
 }
 
-interface WorkflowExecutionResult {
-  status: string;
-  result?: {
-    score?: number;
-    evaluationReport?: string;
-    diagramType?: DiagramType;
-    extractedInformation?: unknown;
-  };
-  steps?: Record<string, WorkflowStepResult>;
-}
-
 const getEvaluationResult = async (c: Context) => {
   const user = c.get("user");
   const mastra = c.get("mastra");
@@ -60,20 +49,28 @@ const getEvaluationResult = async (c: Context) => {
     mastra
   );
 
-  const executionResult = (await workflow.getWorkflowRunExecutionResult(
+  const executionResult = await workflow.getWorkflowRunExecutionResult(
     evaluation.workflowRunId!
-  )) as WorkflowExecutionResult | undefined;
+  );
 
   if (executionResult?.status === "success" && executionResult?.result) {
     // Extract diagramType from result if available
     const diagramType = executionResult.result.diagramType;
 
+    let result;
+
+    if (executionResult?.result?.erdEvaluationStep) {
+      result = executionResult.result.erdEvaluationStep;
+    } else if (executionResult?.result?.dbEvaluationStep) {
+      result = executionResult.result.dbEvaluationStep;
+    }
+
     await db
       .update(evaluationHistory)
       .set({
         status: "completed",
-        score: executionResult.result.score,
-        evaluationReport: executionResult.result.evaluationReport,
+        score: result.score,
+        evaluationReport: result.evaluationReport,
         ...(diagramType && { diagramType }),
       })
       .where(eq(evaluationHistory.id, evaluationId));
