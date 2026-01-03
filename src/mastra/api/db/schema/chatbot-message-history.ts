@@ -16,12 +16,12 @@ export const chatbotMessageHistory = pgTable("chatbot_message_history", {
   conversationId: uuid("conversation_id")
     .notNull()
     .references(() => chatbotConversationHistory.id, { onDelete: "cascade" }),
-  role: varchar("role", { length: 20 }).notNull(), // user | assistant
+  role: varchar("role", { length: 20 }).notNull(),
   content: text("content").notNull(),
   schemaSnapshot: jsonb("schema_snapshot"),
   ddlSnapshot: text("ddl_snapshot"),
   runId: varchar("run_id", { length: 255 }),
-  intent: varchar("intent", { length: 50 }), // schema | side-question
+  intent: varchar("intent", { length: 50 }),
   confidence: real("confidence"),
   enableSearch: boolean("enable_search").default(false),
   createdAt: timestamp("created_at").defaultNow(),
