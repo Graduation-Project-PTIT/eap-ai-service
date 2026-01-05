@@ -1,14 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { gemini25FlashLite } from "../models/google";
 
-/**
- * Content Summarizer
- *
- * Summarizes full search results into token-efficient, schema-focused insights.
- * Target: 80-90% compression while preserving key database design information.
- */
-
-// Create lightweight agent for summarization
 const summarizerAgent = new Agent({
   name: "contentSummarizerAgent",
   instructions:
@@ -24,9 +16,6 @@ export interface SummarizedSearchResult {
   compressionRatio: number;
 }
 
-/**
- * Summarize search result content for schema design
- */
 export async function summarizeSearchResult(
   searchQuery: string,
   fullContent: string,

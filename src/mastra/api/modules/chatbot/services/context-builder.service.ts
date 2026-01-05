@@ -51,6 +51,26 @@ export function buildFullContext(
     fullContext += `---\n\n`;
   }
 
+  if (intent.intent === "side-question") {
+    if (hasCurrentErdSchema) {
+      console.log(`🗄️  Including ERD schema as REFERENCE for side question`);
+      fullContext += `# Current ERD Schema (Reference)\n\n`;
+      fullContext += `**Context:** The following ERD schema exists in this conversation. Use it to answer questions about the design, relationships, and structure.\n\n`;
+      fullContext += `\`\`\`json\n${JSON.stringify(conversation.currentErdSchema, null, 2)}\n\`\`\`\n\n`;
+      fullContext += `---\n\n`;
+    }
+
+    if (hasCurrentPhysicalSchema) {
+      console.log(
+        `🗄️  Including Physical DB schema as REFERENCE for side question (${conversation.currentDdl?.length} chars)`
+      );
+      fullContext += `# Current Database Schema (Reference)\n\n`;
+      fullContext += `**Context:** The following database schema exists in this conversation. Use it to answer questions about tables, columns, constraints, and implementation details.\n\n`;
+      fullContext += `\`\`\`sql\n${conversation.currentDdl}\n\`\`\`\n\n`;
+      fullContext += `---\n\n`;
+    }
+  }
+
   // Add conversation history in chronological order
   if (messages.length > 0) {
     fullContext += `# Conversation History\n\n`;
