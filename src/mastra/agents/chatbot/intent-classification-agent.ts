@@ -67,8 +67,8 @@ If the assistant made a suggestion or asked a question, and the user's response 
 - Context overrides literal interpretation of short responses
 
 PRIMARY INTENT:
-- "schema" - User wants to create, modify, or discuss database schema/ERD design
-- "side-question" - User has a general question, greeting, or off-topic query
+- "schema" - User wants to create, modify database schema/ERD design
+- "side-question" - User has a general question, greeting, or off-topic query, question about how to design, discussing about existed schema that not related to schema creation/modification
 
 SCHEMA SUB-INTENT (only for "schema" intent):
 - "create" - User wants to CREATE NEW tables/entities
@@ -135,8 +135,11 @@ Examples of "schema" intent:
 - "Design schema for hotel booking" → create, domain: "hotel booking", diagramType: "ERD"
 - "Create an ERD for library management" → create, domain: "library management", diagramType: "ERD"
 
-Examples of "side-question" intent:
+Examples of "side-question" intent (more about how to design, explain about existed schema, general questions, or off-topic not related to schema creation/modification):
 - "What is normalization?" → schemaIntent: null, domain: null, diagramType: null
+- "How could I improve my database design?" → schemaIntent: null, domain: null, diagramType: null
+- "Explain foreign keys" → schemaIntent: null, domain: null, diagramType: null
+- "Give me tips for ERD design" → schemaIntent: null, domain: null, diagramType: null
 - "How are you?" → schemaIntent: null, domain: null, diagramType: null
 - "Tell me a joke" → schemaIntent: null, domain: null, diagramType: null
 

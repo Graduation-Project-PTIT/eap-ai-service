@@ -80,7 +80,6 @@ export async function classifyIntent(
     "intentClassificationAgent"
   );
 
-  // Build contextual message including history if available
   const messageToClassify = buildContextualMessage(
     message,
     conversationHistory

@@ -117,9 +117,6 @@ async function handleErdConversion(
   });
 }
 
-/**
- * Main send message handler
- */
 const sendMessageHandler = async (c: Context) => {
   const startTime = Date.now();
   const requestId = generateRequestId();
