@@ -41,27 +41,44 @@ const branchOutputSchema = z.object({
 const chatbotWorkflow = createWorkflow({
   id: "chatbotWorkflow",
 
-  // Input: Structured input with separated concerns for tools vs LLM
+  // Input: Raw data - each step builds its own context
   inputSchema: z.object({
     userMessage: z
       .string()
       .min(1)
-      .describe("The user's current message (for search tools)"),
-    fullContext: z
-      .string()
-      .describe("Full context including schema + history (for LLM)"),
+      .describe("The user's current message"),
     domain: z
       .string()
       .nullable()
       .describe("Business domain context for search query enrichment"),
-    schemaContext: z
+
+    // Raw schema data - steps build context as needed
+    currentErdSchema: z
+      .any()
+      .nullable()
+      .describe("Current ERD schema object"),
+    currentPhysicalSchema: z
+      .any()
+      .nullable()
+      .describe("Current Physical DB schema object"),
+    currentDdl: z
       .string()
       .nullable()
       .describe("Current database schema DDL"),
+
+    // Conversation history with timestamps for context building
     conversationHistory: z
-      .array(z.object({ role: z.string(), content: z.string() }))
+      .array(
+        z.object({
+          role: z.string(),
+          content: z.string(),
+          createdAt: z.string().optional(),
+        })
+      )
       .optional()
       .describe("Previous conversation messages"),
+
+    // Classification results
     intent: z
       .enum(["schema", "side-question"])
       .describe("Pre-classified intent from handler"),
@@ -82,7 +99,7 @@ const chatbotWorkflow = createWorkflow({
       .boolean()
       .optional()
       .default(true)
-      .describe("Enable or disable web search tool for schema generation"),
+      .describe("Enable or disable web search tool"),
   }),
 
   // Output: Union type that can be either side question response or schema generation result
