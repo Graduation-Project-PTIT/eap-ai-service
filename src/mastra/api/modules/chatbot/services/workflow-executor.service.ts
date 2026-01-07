@@ -3,7 +3,6 @@
  * Handles execution of chatbot workflow and result parsing
  */
 
-import { MessageType } from "./conversation.service";
 import { IntentClassification } from "./intent-classification.service";
 
 /**
@@ -11,10 +10,11 @@ import { IntentClassification } from "./intent-classification.service";
  */
 export interface WorkflowInput {
   userMessage: string;
-  fullContext: string;
   domain: string | null;
-  schemaContext: string | null;
-  conversationHistory: { role: string; content: string }[];
+  currentErdSchema: any | null;
+  currentPhysicalSchema: any | null;
+  currentDdl: string | null;
+  conversationHistory: { role: string; content: string; createdAt?: string }[];
   intent: IntentClassification["intent"];
   schemaIntent: IntentClassification["schemaIntent"];
   diagramType: IntentClassification["diagramType"];
@@ -56,9 +56,10 @@ export async function executeWorkflow(
   const workflowResult = await run.start({
     inputData: {
       userMessage: input.userMessage,
-      fullContext: input.fullContext,
       domain: input.domain,
-      schemaContext: input.schemaContext,
+      currentErdSchema: input.currentErdSchema,
+      currentPhysicalSchema: input.currentPhysicalSchema,
+      currentDdl: input.currentDdl,
       conversationHistory: input.conversationHistory,
       intent: input.intent,
       schemaIntent: input.schemaIntent,

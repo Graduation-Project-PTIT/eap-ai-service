@@ -138,7 +138,7 @@ DO NOT use for:
       // Format as markdown for LLM consumption
       const fullContent = formatAsMarkdown(searchQuery, enhancedResults);
 
-      // Generate summary
+      // Generate summary for logging
       const summary = generateExtractionSummary(enhancedResults);
 
       const successfulExtractions = enhancedResults.filter(

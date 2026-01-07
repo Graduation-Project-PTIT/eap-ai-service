@@ -6,34 +6,45 @@ import {
   SummarizedSearchResult,
   summarizeSearchResult,
 } from "../../../utils/content-summarizer";
+import { buildSideQuestionContext } from "../../../utils/context-utils";
 
 /**
  * Side Question Handling Step
  *
  * This step handles general questions or off-topic queries.
- * It uses the side question agent to provide helpful responses
- * without memory (context is provided manually).
+ * It builds its own context from raw data and optionally enriches it with web search.
  *
  * Flow:
- * 1. If enableSearch = true → Execute general knowledge search
- * 2. Summarize search results (80-90% compression)
- * 3. Prepend summarized context to fullContext
- * 4. Generate response using the enhanced context
+ * 1. Build context from raw schema and conversation history
+ * 2. If enableSearch = true → Execute general knowledge search
+ * 3. Summarize search results (80-90% compression)
+ * 4. Prepend summarized search to context
+ * 5. Generate response using the enhanced context
  */
 const sideQuestionStep = createStep({
   id: "sideQuestionStep",
 
   inputSchema: z.object({
     userMessage: z.string().min(1).describe("The user's current message"),
-    fullContext: z.string().describe("Full context including schema + history"),
     domain: z.string().nullable(),
-    schemaContext: z.string().nullable(),
+    currentErdSchema: z.any().nullable(),
+    currentPhysicalSchema: z.any().nullable(),
+    currentDdl: z.string().nullable(),
     conversationHistory: z
-      .array(z.object({ role: z.string(), content: z.string() }))
+      .array(
+        z.object({
+          role: z.string(),
+          content: z.string(),
+          createdAt: z.string().optional(),
+        })
+      )
       .optional(),
     intent: z.enum(["schema", "side-question"]),
     schemaIntent: z.enum(["create", "modify"]).nullable(),
-    diagramType: z.enum(["ERD", "PHYSICAL_DB"]).nullable().describe("Type of diagram to generate"),
+    diagramType: z
+      .enum(["ERD", "PHYSICAL_DB"])
+      .nullable()
+      .describe("Type of diagram to generate"),
     confidence: z.number(),
     enableSearch: z.boolean().optional().default(true),
   }),
@@ -55,11 +66,25 @@ const sideQuestionStep = createStep({
   }),
 
   execute: async ({ inputData, mastra }) => {
-    const { fullContext, userMessage, enableSearch } = inputData;
+    const {
+      userMessage,
+      currentErdSchema,
+      currentDdl,
+      conversationHistory,
+      enableSearch,
+    } = inputData;
     const agent = mastra.getAgent("sideQuestionAgent");
 
+    // Build context from raw data
+    const baseContext = buildSideQuestionContext({
+      userMessage,
+      erdSchema: currentErdSchema,
+      ddl: currentDdl,
+      conversationHistory: conversationHistory || [],
+    });
+
     console.log(
-      `💬 Handling side question with full context (${fullContext.length} chars)`
+      `💬 Handling side question (base context: ${baseContext.length} chars)`
     );
 
     try {
@@ -74,10 +99,14 @@ const sideQuestionStep = createStep({
 
       // ===== STEP 1: Execute Web Search (if enabled) =====
       if (enableSearch) {
-        console.log(`🔍 Executing general knowledge search for: "${userMessage}"`);
+        console.log(
+          `🔍 Executing general knowledge search for: "${userMessage}"`
+        );
 
         try {
-          const searchResult = await (generalKnowledgeSearchTool as any).execute({
+          const searchResult = await (
+            generalKnowledgeSearchTool as any
+          ).execute({
             context: { query: userMessage },
             runtimeContext: {},
           });
@@ -109,17 +138,21 @@ const sideQuestionStep = createStep({
             );
           }
         } catch (searchError) {
-          console.warn("⚠️ Search failed, continuing without search context:", searchError);
+          console.warn(
+            "⚠️ Search failed, continuing without search context:",
+            searchError
+          );
         }
       }
 
       // ===== STEP 4: Build Enhanced Context =====
       const enhancedContext = searchContext
-        ? `${searchContext}${fullContext}`
-        : fullContext;
+        ? `${searchContext}${baseContext}`
+        : baseContext;
 
-      // Note: Memory is disabled - context is provided manually in the message
-      console.log(`💬 Answering side question (context: ${enhancedContext.length} chars)`);
+      console.log(
+        `💬 Answering side question (context: ${enhancedContext.length} chars)`
+      );
 
       // Generate response using enhanced context
       const result = await agent.generate(enhancedContext);
@@ -140,7 +173,6 @@ const sideQuestionStep = createStep({
     } catch (error) {
       console.error("❌ Side question handling error:", error);
 
-      // Return a friendly error message
       return {
         response:
           "I apologize, but I encountered an error while processing your question. Please try again or rephrase your question.",
@@ -156,4 +188,3 @@ const sideQuestionStep = createStep({
 });
 
 export default sideQuestionStep;
-

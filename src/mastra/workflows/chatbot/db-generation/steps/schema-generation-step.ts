@@ -183,8 +183,6 @@ const schemaGenerationStep = createStep({
         throw new Error("Agent response missing entities array");
       }
 
-      // ===== STEP 9: Detect Schema Type =====
-      // Check if this is a schema response or side question
       const hasSchemaData = parsedResponse.entities.length > 0;
 
       console.log(`📊 Schema generation result:`);

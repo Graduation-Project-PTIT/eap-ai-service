@@ -28,8 +28,6 @@ export {
   SchemaValidationResult,
 } from "./schema-validation.service";
 
-export { buildFullContext } from "./context-builder.service";
-
 export {
   convertErdToPhysicalDb,
   ConversionResult,

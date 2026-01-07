@@ -2,23 +2,32 @@ import { createStep } from "@mastra/core";
 import z from "zod";
 import dbInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
 import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
+import { buildSchemaGenerationContext } from "../../../utils/context-utils";
 
 /**
  * Schema Workflow Branch Step
  *
  * This step invokes the existing dbGenerationWorkflow
  * when the intent is classified as "schema" with diagramType "PHYSICAL_DB".
+ * It builds the appropriate context based on create/modify intent.
  */
 const schemaWorkflowBranchStep = createStep({
   id: "schemaWorkflowBranchStep",
 
   inputSchema: z.object({
     userMessage: z.string().describe("The user's current message"),
-    fullContext: z.string().describe("Full context including schema + history"),
     domain: z.string().nullable(),
-    schemaContext: z.string().nullable(),
+    currentErdSchema: z.any().nullable(),
+    currentPhysicalSchema: z.any().nullable(),
+    currentDdl: z.string().nullable(),
     conversationHistory: z
-      .array(z.object({ role: z.string(), content: z.string() }))
+      .array(
+        z.object({
+          role: z.string(),
+          content: z.string(),
+          createdAt: z.string().optional(),
+        })
+      )
       .optional(),
     intent: z.enum(["schema", "side-question"]),
     schemaIntent: z.enum(["create", "modify"]).nullable(),
@@ -29,8 +38,8 @@ const schemaWorkflowBranchStep = createStep({
 
   outputSchema: z.object({
     response: z.string().optional(),
-    updatedSchema: dbInformationGenerationSchema.optional(), // Physical DB schema
-    updatedErdSchema: erdInformationGenerationSchema.optional(), // ERD schema (not used here)
+    updatedSchema: dbInformationGenerationSchema.optional(),
+    updatedErdSchema: erdInformationGenerationSchema.optional(),
     ddlScript: z.string().optional(),
     agentResponse: z.string().optional(),
     isSideQuestion: z.boolean(),
@@ -39,28 +48,46 @@ const schemaWorkflowBranchStep = createStep({
   }),
 
   execute: async ({ inputData, mastra }) => {
-    console.log(`🏗️ Running Physical DB schema generation workflow...`);
-    console.log(`📏 User message: ${inputData.userMessage.length} chars`);
-    console.log(`📏 Full context: ${inputData.fullContext.length} chars`);
-    console.log(`🏷️  Domain: ${inputData.domain || "none"}`);
+    const {
+      userMessage,
+      domain,
+      currentPhysicalSchema,
+      currentDdl,
+      conversationHistory,
+      schemaIntent,
+      enableSearch,
+    } = inputData;
 
-    // Get and execute the dbGenerationWorkflow
+    // Build context optimized for Physical DB generation
+    const fullContext = buildSchemaGenerationContext({
+      userMessage,
+      schemaIntent,
+      diagramType: "PHYSICAL_DB",
+      erdSchema: null, // Physical DB uses DDL, not ERD
+      ddl: currentDdl,
+      conversationHistory: conversationHistory || [],
+    });
+
+    console.log(`🏗️ Running Physical DB schema generation workflow...`);
+    console.log(`📏 User message: ${userMessage.length} chars`);
+    console.log(`📏 Built context: ${fullContext.length} chars`);
+    console.log(`🏷️  Domain: ${domain || "none"}`);
+    console.log(`🔧 Schema intent: ${schemaIntent || "create"}`);
+
     const workflow = mastra.getWorkflow("dbGenerationWorkflow");
 
     if (!workflow) {
       throw new Error("DB generation workflow not found");
     }
 
-    // Create a new workflow run
     const run = await workflow.createRunAsync();
 
-    // Start the workflow with structured input
     const result = await run.start({
       inputData: {
-        userMessage: inputData.userMessage,
-        fullContext: inputData.fullContext,
-        domain: inputData.domain,
-        enableSearch: inputData.enableSearch,
+        userMessage,
+        fullContext,
+        domain,
+        enableSearch,
       },
     });
 
@@ -79,7 +106,7 @@ const schemaWorkflowBranchStep = createStep({
     return {
       response: workflowResult.agentResponse,
       updatedSchema: workflowResult.updatedSchema,
-      updatedErdSchema: undefined, // No ERD schema for Physical DB
+      updatedErdSchema: undefined,
       ddlScript: workflowResult.ddlScript,
       agentResponse: workflowResult.agentResponse,
       isSideQuestion: false,

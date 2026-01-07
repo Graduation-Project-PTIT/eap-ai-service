@@ -24,7 +24,6 @@ import {
   validateSchemaRequest,
   shouldSaveDomain,
   isConversionRequest,
-  buildFullContext,
   convertErdToPhysicalDb,
   executeWorkflow,
   ConversationType,
@@ -189,26 +188,20 @@ const sendMessageHandler = async (c: Context) => {
       );
     }
 
-    // 9. Build context for LLM
-    const fullContext = buildFullContext(
-      conversation,
-      messages,
-      intent,
-      message
-    );
-
-    // 10. Save user message
+    // 9. Save user message
     await saveUserMessage(conversationId, message, enableSearch ?? false);
 
-    // 11. Execute workflow
+    // 10. Execute workflow (steps build their own context from raw data)
     const workflowResult = await executeWorkflow(mastra, {
       userMessage: message,
-      fullContext,
       domain: conversation.domain || null,
-      schemaContext: conversation.currentDdl || null,
+      currentErdSchema: conversation.currentErdSchema || null,
+      currentPhysicalSchema: conversation.currentSchema || null,
+      currentDdl: conversation.currentDdl || null,
       conversationHistory: messages.map((m) => ({
         role: m.role,
         content: m.content,
+        createdAt: m.createdAt?.toISOString(),
       })),
       intent: intent.intent,
       schemaIntent: intent.schemaIntent,

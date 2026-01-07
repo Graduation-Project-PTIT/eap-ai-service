@@ -2,23 +2,32 @@ import { createStep } from "@mastra/core";
 import z from "zod";
 import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
 import dbInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
+import { buildSchemaGenerationContext } from "../../../utils/context-utils";
 
 /**
  * ERD Workflow Branch Step
  *
  * This step invokes the erdGenerationWorkflow
  * when the intent is classified as "schema" with diagramType "ERD".
+ * It builds the appropriate context based on create/modify intent.
  */
 const erdWorkflowBranchStep = createStep({
   id: "erdWorkflowBranchStep",
 
   inputSchema: z.object({
     userMessage: z.string().describe("The user's current message"),
-    fullContext: z.string().describe("Full context including schema + history"),
     domain: z.string().nullable(),
-    schemaContext: z.string().nullable(),
+    currentErdSchema: z.any().nullable(),
+    currentPhysicalSchema: z.any().nullable(),
+    currentDdl: z.string().nullable(),
     conversationHistory: z
-      .array(z.object({ role: z.string(), content: z.string() }))
+      .array(
+        z.object({
+          role: z.string(),
+          content: z.string(),
+          createdAt: z.string().optional(),
+        })
+      )
       .optional(),
     intent: z.enum(["schema", "side-question"]),
     schemaIntent: z.enum(["create", "modify"]).nullable(),
@@ -29,8 +38,8 @@ const erdWorkflowBranchStep = createStep({
 
   outputSchema: z.object({
     response: z.string().optional(),
-    updatedSchema: dbInformationGenerationSchema.optional(), // Physical DB schema (not used for ERD)
-    updatedErdSchema: erdInformationGenerationSchema.optional(), // ERD schema
+    updatedSchema: dbInformationGenerationSchema.optional(),
+    updatedErdSchema: erdInformationGenerationSchema.optional(),
     ddlScript: z.string().optional(),
     agentResponse: z.string().optional(),
     isSideQuestion: z.boolean(),
@@ -39,28 +48,46 @@ const erdWorkflowBranchStep = createStep({
   }),
 
   execute: async ({ inputData, mastra }) => {
-    console.log(`🏗️ Running ERD generation workflow...`);
-    console.log(`📏 User message: ${inputData.userMessage.length} chars`);
-    console.log(`📏 Full context: ${inputData.fullContext.length} chars`);
-    console.log(`🏷️  Domain: ${inputData.domain || "none"}`);
+    const {
+      userMessage,
+      domain,
+      currentErdSchema,
+      currentDdl,
+      conversationHistory,
+      schemaIntent,
+      enableSearch,
+    } = inputData;
 
-    // Get and execute the erdGenerationWorkflow
+    // Build context optimized for ERD generation
+    const fullContext = buildSchemaGenerationContext({
+      userMessage,
+      schemaIntent,
+      diagramType: "ERD",
+      erdSchema: currentErdSchema,
+      ddl: currentDdl,
+      conversationHistory: conversationHistory || [],
+    });
+
+    console.log(`🏗️ Running ERD generation workflow...`);
+    console.log(`📏 User message: ${userMessage.length} chars`);
+    console.log(`📏 Built context: ${fullContext.length} chars`);
+    console.log(`🏷️  Domain: ${domain || "none"}`);
+    console.log(`🔧 Schema intent: ${schemaIntent || "create"}`);
+
     const workflow = mastra.getWorkflow("erdGenerationWorkflow");
 
     if (!workflow) {
       throw new Error("ERD generation workflow not found");
     }
 
-    // Create a new workflow run
     const run = await workflow.createRunAsync();
 
-    // Start the workflow with structured input
     const result = await run.start({
       inputData: {
-        userMessage: inputData.userMessage,
-        fullContext: inputData.fullContext,
-        domain: inputData.domain,
-        enableSearch: inputData.enableSearch,
+        userMessage,
+        fullContext,
+        domain,
+        enableSearch,
       },
     });
 
@@ -74,14 +101,18 @@ const erdWorkflowBranchStep = createStep({
     };
 
     console.log(`✅ ERD workflow completed`);
-    console.log(`   - Entities: ${workflowResult.updatedErdSchema?.entities?.length || 0}`);
-    console.log(`   - Relationships: ${workflowResult.updatedErdSchema?.relationships?.length || 0}`);
+    console.log(
+      `   - Entities: ${workflowResult.updatedErdSchema?.entities?.length || 0}`
+    );
+    console.log(
+      `   - Relationships: ${workflowResult.updatedErdSchema?.relationships?.length || 0}`
+    );
 
     return {
       response: workflowResult.agentResponse,
-      updatedSchema: undefined, // No Physical DB schema for ERD
+      updatedSchema: undefined,
       updatedErdSchema: workflowResult.updatedErdSchema,
-      ddlScript: undefined, // No DDL for ERD
+      ddlScript: undefined,
       agentResponse: workflowResult.agentResponse,
       isSideQuestion: false,
       isSchemaGeneration: false,
@@ -91,4 +122,3 @@ const erdWorkflowBranchStep = createStep({
 });
 
 export default erdWorkflowBranchStep;
-
