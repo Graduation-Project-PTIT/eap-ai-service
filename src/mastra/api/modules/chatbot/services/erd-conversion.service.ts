@@ -1,23 +1,12 @@
-/**
- * ERD Conversion Service
- * Handles conversion from ERD (Chen notation) to Physical Database schema
- */
-
 import dbInformationGenerationSchema from "../../../../../schemas/dbInformationGenerationSchema";
 import { z } from "zod";
 
-/**
- * Result of ERD to Physical DB conversion
- */
 export interface ConversionResult {
   physicalSchema: { entities: any[] };
   ddlScript: string;
   agentResponse: string;
 }
 
-/**
- * Build the conversion prompt with detailed rules
- */
 function buildConversionPrompt(erdSchema: any): string {
   return `Convert the following ERD schema (Chen notation) to a Physical Database schema.
 
@@ -60,9 +49,6 @@ Generate a Physical Database schema following dbInformationGenerationSchema form
 Return the complete schema with all tables, columns, primary keys, foreign keys, and proper SQL types.`;
 }
 
-/**
- * Strip markdown code block wrappers from DDL
- */
 function stripDdlCodeBlock(ddl: string): string {
   let result = ddl.trim();
   if (result.startsWith("```sql")) {
@@ -73,9 +59,6 @@ function stripDdlCodeBlock(ddl: string): string {
   return result;
 }
 
-/**
- * Convert ERD schema to Physical Database schema
- */
 export async function convertErdToPhysicalDb(
   mastra: any,
   erdSchema: any
@@ -100,7 +83,6 @@ export async function convertErdToPhysicalDb(
     throw new Error("Failed to generate physical schema from ERD");
   }
 
-  // Generate DDL from physical schema
   const ddlResult = await ddlAgent.generate([
     {
       role: "user",

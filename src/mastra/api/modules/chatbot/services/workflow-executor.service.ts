@@ -1,13 +1,5 @@
-/**
- * Workflow Executor Service
- * Handles execution of chatbot workflow and result parsing
- */
-
 import { IntentClassification } from "./intent-classification.service";
 
-/**
- * Input for workflow execution
- */
 export interface WorkflowInput {
   userMessage: string;
   domain: string | null;
@@ -22,9 +14,6 @@ export interface WorkflowInput {
   enableSearch: boolean;
 }
 
-/**
- * Result from workflow execution
- */
 export interface WorkflowResult {
   success: boolean;
   responseText: string;
@@ -37,9 +26,6 @@ export interface WorkflowResult {
   runId: string;
 }
 
-/**
- * Execute the chatbot workflow
- */
 export async function executeWorkflow(
   mastra: any,
   input: WorkflowInput
@@ -85,11 +71,9 @@ export async function executeWorkflow(
     };
   }
 
-  // Extract the actual result from the branch step wrapper
   const rawResult = workflowResult.result as any;
   console.log(`🔍 Raw workflow result keys:`, Object.keys(rawResult));
 
-  // The branch result is nested under the step ID
   const result = (rawResult.erdWorkflowBranchStep ||
     rawResult.schemaWorkflowBranchStep ||
     rawResult.sideQuestionStep ||

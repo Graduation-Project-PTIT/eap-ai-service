@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { MessageType } from "./conversation.service";
 
-/**
- * Type for intent classification result
- */
 export interface IntentClassification {
   intent: "schema" | "side-question";
   schemaIntent: "create" | "modify" | null;
@@ -31,30 +28,21 @@ const DEFAULT_INTENT: IntentClassification = {
   confidence: 0.5,
 };
 
-/**
- * Build contextual message for intent classification
- * Includes conversation history if available to help agent understand context
- */
 function buildContextualMessage(
   currentMessage: string,
   conversationHistory: MessageType[]
 ): string {
-  // If no history or empty history, return current message only
   if (!conversationHistory || conversationHistory.length === 0) {
     return currentMessage;
   }
 
-  // Get last few messages (limit to 3 for token efficiency)
   const recentMessages = conversationHistory.slice(-3);
 
-  // Check if last message is from assistant
   const lastMessage = recentMessages[recentMessages.length - 1];
   if (!lastMessage || lastMessage.role !== "assistant") {
-    // No assistant context to leverage, use current message only
     return currentMessage;
   }
 
-  // Build contextual prompt with conversation history
   let contextualPrompt = "Previous conversation:\n";
 
   recentMessages.forEach((msg) => {
@@ -98,7 +86,6 @@ export async function classifyIntent(
 
   const resultWithObject = intentResult as any;
 
-  // Check if the agent generated a structured response
   if (!resultWithObject || !resultWithObject.object) {
     console.error(
       "⚠️ Agent failed to generate structured intent classification response"
@@ -114,7 +101,6 @@ export async function classifyIntent(
 
   const intentClassification = resultWithObject.object as IntentClassification;
 
-  // Default to ERD if diagramType is null for schema intent
   if (
     intentClassification.intent === "schema" &&
     !intentClassification.diagramType
