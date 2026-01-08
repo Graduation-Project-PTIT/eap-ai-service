@@ -1,15 +1,5 @@
 import axios from "axios";
 
-/**
- * Content Extractor Utilities
- *
- * Provides functionality to extract full webpage content using Jina Reader API
- * and format results for optimal LLM consumption.
- */
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
 
 export interface ExtractedContent {
   url: string;
@@ -28,24 +18,10 @@ export interface EnhancedSearchResult {
   extractionStatus: "success" | "failed" | "skipped";
 }
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const JINA_READER_BASE_URL = "https://r.jina.ai";
 const REQUEST_TIMEOUT = 10000; // 10 seconds
 const MAX_CONTENT_LENGTH = 50000; // 50K characters max
 
-// ============================================================================
-// CORE EXTRACTION FUNCTIONS
-// ============================================================================
-
-/**
- * Extract content from a single URL using Jina Reader API
- *
- * @param url - The URL to extract content from
- * @returns Extracted content with metadata
- */
 export async function extractContentWithJina(
   url: string
 ): Promise<ExtractedContent> {
@@ -96,14 +72,6 @@ export async function extractContentWithJina(
   }
 }
 
-/**
- * Extract content from multiple URLs in parallel with error handling
- *
- * Uses Promise.allSettled to ensure one failure doesn't break everything
- *
- * @param urls - Array of URLs to extract content from
- * @returns Array of extraction results
- */
 export async function extractContentBatch(
   urls: string[]
 ): Promise<ExtractedContent[]> {
@@ -137,19 +105,6 @@ export async function extractContentBatch(
   return extractedContents;
 }
 
-// ============================================================================
-// FORMATTING FUNCTIONS
-// ============================================================================
-
-/**
- * Format search results into structured markdown for LLM consumption
- *
- * Creates a well-structured document with source citations and metadata
- *
- * @param query - The original search query
- * @param results - Enhanced search results with extracted content
- * @returns Formatted markdown string
- */
 export function formatAsMarkdown(
   query: string,
   results: EnhancedSearchResult[]
@@ -184,15 +139,6 @@ export function formatAsMarkdown(
   return markdown;
 }
 
-/**
- * Merge search results with extracted content
- *
- * Combines Serper search results with Jina-extracted content
- *
- * @param searchResults - Original search results from Serper
- * @param extractedContents - Extracted content from Jina
- * @returns Enhanced search results
- */
 export function mergeResultsWithContent(
   searchResults: Array<{ title: string; link: string; snippet: string }>,
   extractedContents: ExtractedContent[]
@@ -222,12 +168,6 @@ export function mergeResultsWithContent(
   });
 }
 
-/**
- * Generate a summary of extraction results
- *
- * @param results - Enhanced search results
- * @returns Summary string
- */
 export function generateExtractionSummary(
   results: EnhancedSearchResult[]
 ): string {
@@ -239,10 +179,6 @@ export function generateExtractionSummary(
 
   return `Found ${results.length} resources. Successfully extracted full content from ${successful} source(s) (~${totalWords.toLocaleString()} words total). ${failed > 0 ? `${failed} extraction(s) failed (using snippets).` : ""}`;
 }
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default {
   extractContentWithJina,

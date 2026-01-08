@@ -9,23 +9,22 @@ import {
 } from "../utils/content-extractor";
 
 /**
- * Business Domain Search Tool
+ * General Knowledge Search Tool
  *
- * Searches for BUSINESS REQUIREMENTS and DOMAIN CONCEPTS to understand
- * what entities and workflows are needed in a specific business domain.
+ * Searches for GENERAL DATABASE KNOWLEDGE and concept explanations
+ * to help answer user questions about databases, SQL, and related topics.
  *
- * Use this FIRST when designing a schema for:
- * - Healthcare/Medical systems
- * - E-commerce/Retail platforms
- * - Education/School management
- * - Financial/Banking systems
- * - Any industry-specific domain you're not 100% familiar with
+ * Use this when:
+ * - User asks general questions about database concepts
+ * - User needs explanation of SQL syntax or features
+ * - User wants to understand best practices
+ * - User has off-topic but database-related questions
  *
- * This tool helps you discover:
- * - What entities (tables) typically exist in this domain
- * - What business workflows and processes are involved
- * - What relationships exist between business concepts
- * - Domain-specific terminology and vocabulary
+ * This tool helps provide:
+ * - Clear explanations of database concepts
+ * - SQL syntax and usage examples
+ * - Best practices and recommendations
+ * - General technical knowledge
  */
 
 interface SerperSearchResult {
@@ -39,34 +38,32 @@ interface SerperApiResponse {
   organic?: SerperSearchResult[];
 }
 
-export const businessDomainSearchTool = createTool({
-  id: "business-domain-search-tool",
-  description: `Search for BUSINESS REQUIREMENTS and DOMAIN ENTITIES for a specific industry or domain.
+export const generalKnowledgeSearchTool = createTool({
+  id: "general-knowledge-search-tool",
+  description: `Search for GENERAL DATABASE KNOWLEDGE and concept explanations.
 
 Use this tool when:
-- User asks for a schema in an unfamiliar business domain (healthcare, e-commerce, logistics, etc.)
-- You need to understand what entities/tables are typically needed in that domain
-- You want to discover business workflows and processes
-- You're not 100% confident about the domain's core entities
+- User asks about database concepts (normalization, indexes, transactions, etc.)
+- User needs SQL syntax explanations
+- User wants to understand database best practices
+- User has general technical questions
 
 Examples of GOOD queries:
-- "hospital management system core entities and business workflows"
-- "e-commerce platform essential database entities"
-- "school management system functional requirements entities"
-- "banking system core business entities"
+- "what is database normalization"
+- "how do foreign keys work"
+- "difference between inner join and outer join"
+- "what is ACID in databases"
+- "how to optimize SQL queries"
 
 DO NOT use for:
-- Simple CRUD apps (todo, blog)
-- Technical database patterns (use db-design-pattern-search instead)
-- When you already know the domain well`,
+- Specific business domain requirements (use business-domain-search instead)
+- Complex design patterns (use db-design-pattern-search instead)`,
 
   inputSchema: z.object({
-    domain: z
+    query: z
       .string()
       .min(3)
-      .describe(
-        "The business domain to search for (e.g., 'hospital management', 'e-commerce', 'school management')"
-      ),
+      .describe("The user's question or topic to search for"),
   }),
 
   outputSchema: z.object({
@@ -85,7 +82,7 @@ DO NOT use for:
   }),
 
   execute: async ({ context }) => {
-    const { domain } = context;
+    const { query } = context;
     const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
     if (!SERPER_API_KEY) {
@@ -93,10 +90,10 @@ DO NOT use for:
       throw new Error("Serper API key not configured");
     }
 
-    // Create a business-focused search query
-    const searchQuery = `${domain} system core entities business requirements database`;
+    // Create a general knowledge-focused search query
+    const searchQuery = `${query} database SQL explanation best practices`;
 
-    console.log(`🏢 Business domain search: "${searchQuery}"`);
+    console.log(`📚 General knowledge search: "${searchQuery}"`);
 
     try {
       const response = await axios.post<SerperApiResponse>(
@@ -122,7 +119,7 @@ DO NOT use for:
       }));
 
       console.log(
-        `✅ Business search completed: ${formattedResults.length} results. Extracting full content...`
+        `✅ General search completed: ${formattedResults.length} results. Extracting full content...`
       );
 
       // Phase 2: Extract full content from all URLs
@@ -138,7 +135,7 @@ DO NOT use for:
       // Format as markdown for LLM consumption
       const fullContent = formatAsMarkdown(searchQuery, enhancedResults);
 
-      // Generate summary for logging
+      // Generate summary
       const summary = generateExtractionSummary(enhancedResults);
 
       const successfulExtractions = enhancedResults.filter(
@@ -162,12 +159,12 @@ DO NOT use for:
         },
       };
     } catch (error) {
-      console.error("❌ Business domain search failed:", error);
+      console.error("❌ General knowledge search failed:", error);
       throw new Error(
-        `Business search failed: ${error instanceof Error ? error.message : "Unknown error"}`
+        `General search failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   },
 });
 
-export default businessDomainSearchTool;
+export default generalKnowledgeSearchTool;

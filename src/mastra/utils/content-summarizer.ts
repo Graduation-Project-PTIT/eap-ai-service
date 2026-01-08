@@ -1,14 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { gemini25FlashLite } from "../models/google";
 
-/**
- * Content Summarizer
- *
- * Summarizes full search results into token-efficient, schema-focused insights.
- * Target: 80-90% compression while preserving key database design information.
- */
-
-// Create lightweight agent for summarization
 const summarizerAgent = new Agent({
   name: "contentSummarizerAgent",
   instructions:
@@ -24,13 +16,10 @@ export interface SummarizedSearchResult {
   compressionRatio: number;
 }
 
-/**
- * Summarize search result content for schema design
- */
 export async function summarizeSearchResult(
   searchQuery: string,
   fullContent: string,
-  searchType: "business" | "pattern"
+  searchType: "business" | "pattern" | "general"
 ): Promise<SummarizedSearchResult> {
   const originalWords = fullContent.split(/\s+/).filter(Boolean).length;
 
@@ -49,10 +38,14 @@ export async function summarizeSearchResult(
     `🔄 Summarizing ${searchType} search result (${originalWords} words)...`
   );
 
-  const prompt =
-    searchType === "business"
-      ? createBusinessSummaryPrompt(searchQuery, fullContent)
-      : createPatternSummaryPrompt(searchQuery, fullContent);
+  let prompt: string;
+  if (searchType === "business") {
+    prompt = createBusinessSummaryPrompt(searchQuery, fullContent);
+  } else if (searchType === "pattern") {
+    prompt = createPatternSummaryPrompt(searchQuery, fullContent);
+  } else {
+    prompt = createGeneralSummaryPrompt(searchQuery, fullContent);
+  }
 
   try {
     const result = await summarizerAgent.generate(prompt);
@@ -137,6 +130,31 @@ Format as clear, concise paragraphs. Focus on practical implementation details.
 Ignore ORM code examples, programming language specifics, theoretical explanations without schema impact, and non-SQL database solutions.
 
 Keep the summary under 500 words while preserving all critical technical details.`;
+}
+
+/**
+ * Create prompt for general knowledge summarization - plain text output
+ */
+function createGeneralSummaryPrompt(query: string, content: string): string {
+  return `You are analyzing database and SQL documentation to answer a user question.
+
+Search Query: "${query}"
+
+Full Content:
+${content}
+
+Extract and summarize ONLY relevant information to answer the user's question in plain text format. Write a concise summary covering:
+
+1. Direct answer to the user's question
+2. Key concepts and definitions
+3. Practical examples or use cases
+4. Important considerations or best practices
+
+Format as clear, concise paragraphs. Focus on educational and actionable information.
+
+Ignore marketing content, navigation, unrelated topics, and overly technical implementation details.
+
+Keep the summary under 500 words while preserving all information relevant to the user's question.`;
 }
 
 /**
