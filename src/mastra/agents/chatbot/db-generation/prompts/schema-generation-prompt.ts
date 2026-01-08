@@ -113,6 +113,7 @@ Return a JSON object with the following structure:
 ### Critical Rules
 - Use lowercase booleans: true/false (not True/False)
 - Return COMPLETE schema on modifications, not just changes
+- Just change the part of the schema that is requested, do not change other parts that beyond the requested change
 - No code block markers (\`\`\`json) in your output
 - Pure JSON structure only
 

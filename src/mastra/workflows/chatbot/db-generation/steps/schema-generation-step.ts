@@ -142,10 +142,6 @@ const schemaGenerationStep = createStep({
         ? `${searchContext}\n\n${inputData.fullContext}`
         : inputData.fullContext;
 
-      // Note: DDL context (if any) is injected manually via the handler
-      // No need to fetch from memory here
-
-      // ===== STEP 5: Call Agent with Structured Output =====
       const outputSchema = erdInformationGenerationSchema.extend({
         explanation: z
           .string()
