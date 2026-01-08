@@ -5,7 +5,6 @@ import {
 } from "../../../db/schema";
 import { eq, asc } from "drizzle-orm";
 
-
 export type ConversationType = typeof chatbotConversationHistory.$inferSelect;
 
 export interface MessageType {
@@ -49,9 +48,6 @@ export async function findOrCreateConversation(
   return conversation[0];
 }
 
-/**
- * Verify user owns the conversation
- */
 export function verifyOwnership(
   conversation: ConversationType,
   userId: string
@@ -64,9 +60,6 @@ export function verifyOwnership(
   }
 }
 
-/**
- * Fetch conversation history for context
- */
 export async function fetchConversationHistory(
   conversationId: string,
   limit: number = 20
@@ -86,9 +79,6 @@ export async function fetchConversationHistory(
   return messages;
 }
 
-/**
- * Update conversation domain if confidence is high
- */
 export async function updateConversationDomain(
   conversationId: string,
   domain: string,
@@ -105,9 +95,6 @@ export async function updateConversationDomain(
     .where(eq(chatbotConversationHistory.id, conversationId));
 }
 
-/**
- * Update conversation timestamp and optionally run ID
- */
 export async function updateConversationTimestamp(
   conversationId: string,
   runId?: string
@@ -125,9 +112,6 @@ export async function updateConversationTimestamp(
     .where(eq(chatbotConversationHistory.id, conversationId));
 }
 
-/**
- * Update conversation with ERD schema
- */
 export async function updateConversationWithErdSchema(
   conversationId: string,
   erdSchema: any,
@@ -146,9 +130,6 @@ export async function updateConversationWithErdSchema(
   console.log(`✅ Conversation updated with new ERD schema`);
 }
 
-/**
- * Update conversation with Physical DB schema
- */
 export async function updateConversationWithPhysicalSchema(
   conversationId: string,
   schema: any,
@@ -169,9 +150,6 @@ export async function updateConversationWithPhysicalSchema(
   console.log(`✅ Conversation updated with new Physical DB schema`);
 }
 
-/**
- * Save a single message to history
- */
 export async function saveUserMessage(
   conversationId: string,
   message: string,
@@ -186,9 +164,6 @@ export async function saveUserMessage(
   console.log(`💾 User message saved to database`);
 }
 
-/**
- * Save assistant message with optional schema snapshot
- */
 export async function saveAssistantMessage(
   conversationId: string,
   content: string,
@@ -211,9 +186,6 @@ export async function saveAssistantMessage(
   console.log(`💾 Assistant message saved to database`);
 }
 
-/**
- * Save blocked response messages (user + assistant)
- */
 export async function saveBlockedMessages(
   conversationId: string,
   userMessage: string,

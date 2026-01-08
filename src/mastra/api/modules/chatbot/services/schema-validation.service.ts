@@ -1,14 +1,6 @@
-/**
- * Schema Validation Service
- * Handles validation and blocking logic for schema operations
- */
-
 import { ConversationType } from "./conversation.service";
 import { IntentClassification } from "./intent-classification.service";
 
-/**
- * Result of schema validation
- */
 export interface SchemaValidationResult {
   valid: boolean;
   blockedMessage?: string;
@@ -74,9 +66,6 @@ export function isConversionRequest(
   return isConversion;
 }
 
-/**
- * Validate schema request and return blocking message if needed
- */
 export function validateSchemaRequest(
   conversation: ConversationType,
   intent: IntentClassification
@@ -84,7 +73,6 @@ export function validateSchemaRequest(
   const { hasCurrentErdSchema, hasCurrentPhysicalSchema, hasAnySchema } =
     checkExistingSchemas(conversation);
 
-  // Case 1: Block ERD creation when Physical DB already exists
   if (
     hasCurrentPhysicalSchema &&
     intent.diagramType === "ERD" &&
@@ -107,7 +95,6 @@ export function validateSchemaRequest(
     };
   }
 
-  // Case 2: Block new schema creation when one already exists (same diagram type)
   if (
     hasAnySchema &&
     intent.schemaIntent === "create" &&
@@ -130,7 +117,27 @@ export function validateSchemaRequest(
     };
   }
 
-  // Case 3: Block modification when no schema exists
+  if(
+    hasCurrentErdSchema &&
+    intent.schemaIntent === "create" &&
+    intent.diagramType === "PHYSICAL_DB" &&
+    intent.domain !== conversation.domain
+  ) {
+    console.log(`🚫 User attempting to create Physical DB schema in conversation with existing ERD schema`);
+
+    const blockedMessage = `I notice this conversation already has an existing ERD schema in a different domain. To keep conversations focused and organized, I recommend:\n\n**Create a New Conversation** for your new schema design.\n\nThis approach helps because:\n- Each conversation specializes in one domain/schema\n- Easier to track the evolution of each schema\n- Cleaner context and better AI responses\n- Simpler to reference and export specific schemas\n\nWould you like to:\n1. **Modify the existing schema** in this conversation, or\n2. **Create a new conversation** for your new schema design?\n\nYou can start a new conversation anytime from the chat interface!`;
+
+    return {
+      valid: false,
+      blockedMessage,
+      blockedResponse: {
+        schema: conversation.currentSchema,
+        erdSchema: conversation.currentErdSchema,
+        ddl: conversation.currentDdl || "",
+      },
+    };
+  }
+
   if (!hasAnySchema && intent.schemaIntent === "modify") {
     console.log(`🚫 User attempting to modify schema but no schema exists yet`);
 
@@ -147,6 +154,5 @@ export function validateSchemaRequest(
     };
   }
 
-  // All validations passed
   return { valid: true };
 }
