@@ -4,13 +4,6 @@ import erdInformationGenerationSchema from "../../../../schemas/erdInformationGe
 import dbInformationGenerationSchema from "../../../../schemas/dbInformationGenerationSchema";
 import { buildSchemaGenerationContext } from "../../../utils/context-utils";
 
-/**
- * ERD Workflow Branch Step
- *
- * This step invokes the erdGenerationWorkflow
- * when the intent is classified as "schema" with diagramType "ERD".
- * It builds the appropriate context based on create/modify intent.
- */
 const erdWorkflowBranchStep = createStep({
   id: "erdWorkflowBranchStep",
 
@@ -58,7 +51,6 @@ const erdWorkflowBranchStep = createStep({
       enableSearch,
     } = inputData;
 
-    // Build context optimized for ERD generation
     const fullContext = buildSchemaGenerationContext({
       userMessage,
       schemaIntent,

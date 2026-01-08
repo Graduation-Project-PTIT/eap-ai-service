@@ -7,13 +7,6 @@ import {
   updateSchemaInputSchema,
 } from "../types/update-schema.input";
 
-/**
- * Handler: Update conversation schema
- * PUT /ai/chat/:conversationId/schema
- * 
- * Allows users to update the schema of an existing conversation
- * and optionally regenerate the DDL script.
- */
 const updateSchemaHandler = async (c: Context) => {
   try {
     const conversationId = c.req.param("conversationId");
@@ -21,14 +14,12 @@ const updateSchemaHandler = async (c: Context) => {
     const user = c.get("user");
     const mastra = c.get("mastra");
 
-    // Validate input
     const validatedInput = updateSchemaInputSchema.parse({
       ...input,
       conversationId,
     });
     const { schemaJson, regenerateDDL } = validatedInput;
 
-    // Check if conversation exists and user owns it
     const conversation = await db
       .select()
       .from(chatbotConversationHistory)
@@ -43,7 +34,6 @@ const updateSchemaHandler = async (c: Context) => {
       return c.json({ error: "Unauthorized" }, 403);
     }
 
-    // Generate DDL if requested
     let ddlScript = conversation[0].currentDdl || "";
 
     if (regenerateDDL) {
@@ -61,11 +51,9 @@ const updateSchemaHandler = async (c: Context) => {
         ddlScript = (ddlResult as any).text || "";
       } catch (ddlError: any) {
         console.error("DDL generation failed:", ddlError.message);
-        // Continue with schema update even if DDL fails
       }
     }
 
-    // Update conversation with new schema
     const updateData: any = {
       currentSchema: schemaJson,
       updatedAt: new Date(),
@@ -80,7 +68,6 @@ const updateSchemaHandler = async (c: Context) => {
       .set(updateData)
       .where(eq(chatbotConversationHistory.id, conversationId));
 
-    // Return response
     return c.json({
       success: true,
       conversationId,
@@ -92,7 +79,6 @@ const updateSchemaHandler = async (c: Context) => {
     console.error("❌ Error in updateSchemaHandler:", error);
     console.error("❌ Error stack:", error.stack);
 
-    // Handle validation errors
     if (error.name === "ZodError") {
       return c.json(
         {

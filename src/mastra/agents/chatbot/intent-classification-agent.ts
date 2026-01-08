@@ -3,26 +3,6 @@ import { gemini20FlashLite, gemini25FlashLite } from "../../models/google";
 import z from "zod";
 import { gpt41Mini } from "../../models/openai";
 
-/**
- * Intent Classification Agent
- *
- * This agent classifies the user's message intent with conversation context awareness:
- * - "schema": User wants to create/modify database schema
- * - "side-question": User has a general question or off-topic query
- *
- * For schema intent, also determines:
- * - "create": Creating new tables/entities
- * - "modify": Modifying existing tables
- * - "diagramType": ERD (Chen notation) or PHYSICAL_DB
- *
- * Additionally extracts domain context for search query enrichment.
- *
- * CONTEXTUAL AWARENESS:
- * - Recognizes when user responds to assistant suggestions (e.g., "yes" after conversion tip)
- * - Extracts intent from conversation context, not just the literal message
- * - Handles affirmative/negative responses intelligently
- * - Maintains backward compatibility when no context is provided
- */
 export const intentClassificationAgent = new Agent({
   name: "intentClassificationAgent",
 
@@ -198,4 +178,3 @@ Return: intent, schemaIntent (null for side-question), diagramType (null for sid
 });
 
 export default intentClassificationAgent;
-

@@ -32,9 +32,6 @@ import { db } from "../../../db";
 import { chatbotConversationHistory } from "../../../db/schema";
 import { eq } from "drizzle-orm";
 
-/**
- * Handle blocked schema request - save messages and return response
- */
 async function handleBlockedResponse(
   c: Context,
   conversationId: string,
@@ -66,9 +63,6 @@ async function handleBlockedResponse(
   });
 }
 
-/**
- * Handle ERD → Physical DB conversion request
- */
 async function handleErdConversion(
   c: Context,
   mastra: any,
@@ -82,10 +76,8 @@ async function handleErdConversion(
     conversation.currentErdSchema
   );
 
-  // Save user message
   await saveUserMessage(conversationId, message, enableSearch);
 
-  // Save assistant message with full metadata
   await saveAssistantMessage(conversationId, conversionResult.agentResponse, {
     schemaSnapshot: conversionResult.physicalSchema,
     ddlSnapshot: conversionResult.ddlScript,
@@ -93,7 +85,6 @@ async function handleErdConversion(
     intent: "schema",
   });
 
-  // Update conversation with physical schema
   await db
     .update(chatbotConversationHistory)
     .set({
@@ -121,7 +112,6 @@ const sendMessageHandler = async (c: Context) => {
   const requestId = generateRequestId();
 
   try {
-    // 1. Parse and validate input
     const input = await c.req.json<SendMessageInput>();
     const user = c.get("user");
     const mastra = c.get("mastra");
@@ -131,30 +121,24 @@ const sendMessageHandler = async (c: Context) => {
     const validatedInput = sendMessageInputSchema.parse(input);
     const { conversationId, message, enableSearch } = validatedInput;
 
-    // 2. Find or create conversation
     const conversation = await findOrCreateConversation(
       conversationId,
       user.sub,
       message
     );
 
-    // 3. Verify user ownership
     verifyOwnership(conversation, user.sub);
 
-    // 4. Fetch conversation history
     const messages = await fetchConversationHistory(conversationId);
 
-    // 5. Classify intent with conversation context
     const intent = await classifyIntent(mastra, message, messages);
 
-    // 6. Save domain if confidence is high enough
     if (shouldSaveDomain(conversation, intent)) {
       await updateConversationDomain(
         conversationId,
         intent.domain!,
         intent.domainConfidence!
       );
-      // Update local reference
       conversation.domain = intent.domain!;
       conversation.domainConfidence = intent.domainConfidence!.toString();
     } else if (conversation.domain) {
@@ -163,7 +147,6 @@ const sendMessageHandler = async (c: Context) => {
       );
     }
 
-    // 7. Validate schema request (may return early with blocked response)
     const validation = validateSchemaRequest(conversation, intent);
     if (!validation.valid) {
       return handleBlockedResponse(
@@ -176,7 +159,6 @@ const sendMessageHandler = async (c: Context) => {
       );
     }
 
-    // 8. Handle ERD → Physical DB conversion if requested
     if (isConversionRequest(conversation, intent)) {
       return handleErdConversion(
         c,
@@ -188,10 +170,8 @@ const sendMessageHandler = async (c: Context) => {
       );
     }
 
-    // 9. Save user message
     await saveUserMessage(conversationId, message, enableSearch ?? false);
 
-    // 10. Execute workflow (steps build their own context from raw data)
     const workflowResult = await executeWorkflow(mastra, {
       userMessage: message,
       domain: conversation.domain || null,
@@ -210,7 +190,6 @@ const sendMessageHandler = async (c: Context) => {
       enableSearch: enableSearch ?? false,
     });
 
-    // 12. Handle workflow failure
     if (!workflowResult.success) {
       return c.json(
         {
@@ -226,7 +205,6 @@ const sendMessageHandler = async (c: Context) => {
       );
     }
 
-    // 13. Prepare response data
     let schema = conversation.currentSchema || { entities: [] };
     let erdSchema = conversation.currentErdSchema || null;
     let ddl = conversation.currentDdl || "";
@@ -244,7 +222,6 @@ const sendMessageHandler = async (c: Context) => {
       diagramType = "PHYSICAL_DB";
     }
 
-    // 14. Add conversion tip for initial ERD creation
     let finalResponseText = workflowResult.responseText;
     const hasCurrentErdSchema =
       conversation.currentErdSchema &&
@@ -257,7 +234,6 @@ const sendMessageHandler = async (c: Context) => {
         '\n\n---\n\n💡 **Tip:** Would you like me to convert this ERD to a Physical Database schema with DDL? Just ask "Convert to Physical DB" or "Generate database tables".';
     }
 
-    // 15. Save assistant message
     await saveAssistantMessage(conversationId, finalResponseText, {
       schemaSnapshot: workflowResult.isPhysicalGeneration
         ? workflowResult.updatedSchema
@@ -271,7 +247,6 @@ const sendMessageHandler = async (c: Context) => {
       intent: workflowResult.isSideQuestion ? "side-question" : "schema",
     });
 
-    // 16. Update conversation with appropriate schema
     if (workflowResult.isErdGeneration) {
       await updateConversationWithErdSchema(
         conversationId,
@@ -289,7 +264,6 @@ const sendMessageHandler = async (c: Context) => {
       await updateConversationTimestamp(conversationId, workflowResult.runId);
     }
 
-    // 17. Log completion and return response
     const result = {
       success: true,
       conversationId,
@@ -307,7 +281,6 @@ const sendMessageHandler = async (c: Context) => {
   } catch (error: any) {
     logRequestError(requestId, startTime, error);
 
-    // Handle unauthorized error specifically
     if (error.message === "Unauthorized") {
       return c.json({ error: "Unauthorized" }, 403);
     }
