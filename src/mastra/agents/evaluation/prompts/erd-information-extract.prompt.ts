@@ -14,6 +14,8 @@ const erdInformationExtractPrompt = `
   - **Composite Attribute**: Ellipse with nested attributes connected to it (e.g., Address with Street, City, Zip)
   - **Relationship**: Diamond shape - represents association between entities
   - **Cardinality**: Numbers or symbols (1, N, M) near connection lines showing relationship type
+  - **Identifying Relationship**: double diamond shape - weak entity depends on strong entity
+  - **Partial key**: Drawn as an Ellipse with a Dashed Underline inside. The weak entity doesn't have a Primary Key. Instead, it has a "Partial Key" (or discriminator) which distinguishes it only within the context of the strong entity.
   - **Participation**: 
     - Total participation (mandatory): Double line connecting entity to relationship
     - Partial participation (optional): Single line connecting entity to relationship
@@ -44,6 +46,7 @@ const erdInformationExtractPrompt = `
      - relationType: "one-to-one", "one-to-many", "many-to-one", or "many-to-many"
      - sourceParticipation: "total" if double line on source side, "partial" if single line
      - targetParticipation: "total" if double line on target side, "partial" if single line
+     - isIdentifying: true if double diamond shape
      - attributes: Any attributes attached to the relationship diamond
 
   **//-- CARDINALITY INTERPRETATION --//**
@@ -82,7 +85,8 @@ const erdInformationExtractPrompt = `
             "isComposite": true/false,
             "subAttributes": [...], // If composite attribute
             "description": "Attribute description" // Optional
-            "defaultValue": "Default value" // Optional
+            "defaultValue": "Default value" // Optional,
+            "partialkey": true/false (only if is weak entity)
           },
           ... // More attributes
         ], // Array of attributes for this entity
@@ -101,6 +105,7 @@ const erdInformationExtractPrompt = `
         "targetParticipation": "total" | "partial", // Optional
         "attributes": [...], // Optional attributes of the relationship
         "description": "Relationship description" // Optional
+        "isIdentifying": true/false // If this relationship is the identifying relationship for a weak entity
       }
     ], // Array of explicit relationships
   }

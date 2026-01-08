@@ -47,6 +47,7 @@ Design and modify ERD schemas through conversation. You can CREATE new ERDs and 
           "isComposite": true/false,
           "subAttributes": [...] (only if isComposite is true),
           "description": "optional description"
+          "partialKey": true/false (only if is weak entity)
         }
       ],
       "isWeakEntity": true/false,
@@ -62,6 +63,7 @@ Design and modify ERD schemas through conversation. You can CREATE new ERDs and 
       "relationType": "one-to-one" | "one-to-many" | "many-to-one" | "many-to-many",
       "sourceParticipation": "total" | "partial",
       "targetParticipation": "total" | "partial",
+      "isIdentifying": true/false,
       "attributes": [...] (relationship attributes, if any),
       "description": "optional description"
     }
@@ -83,6 +85,7 @@ Design and modify ERD schemas through conversation. You can CREATE new ERDs and 
 
 ### Relationships
 - **Cardinality**: one-to-one, one-to-many, many-to-one, many-to-many
+- **Identifying Relationship**: Weak entity depends on strong entity (double diamond)
 - **Participation**:
   - Total (double line): Every entity instance must participate
   - Partial (single line): Some entity instances may not participate

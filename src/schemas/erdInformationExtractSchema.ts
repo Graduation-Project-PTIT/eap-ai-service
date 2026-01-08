@@ -23,6 +23,9 @@ const erdAttributeSchema: z.ZodType<any> = z.lazy(() =>
     // Composite attribute support - recursive definition
     subAttributes: z.array(erdAttributeSchema).optional(),
 
+    // Partial key
+    partialKey: z.boolean().optional(),
+
     // Optional metadata
     description: z.string().optional(),
     defaultValue: z.string().optional(),
@@ -65,6 +68,9 @@ const erdRelationshipSchema = z.object({
   // Participation constraints (Chen notation)
   sourceParticipation: z.enum(["total", "partial"]).optional(), // Total = double line, Partial = single line
   targetParticipation: z.enum(["total", "partial"]).optional(),
+
+  // Weak entity relationship
+  isIdentifying: z.boolean().optional(),
 
   // Relationship attributes (relationships can have their own attributes)
   attributes: z.array(erdAttributeSchema).optional(),

@@ -23,6 +23,8 @@ const erdGenerationAttributeSchema: z.ZodType<any> = z.lazy(() =>
     // Composite attribute support - recursive definition
     subAttributes: z.array(erdGenerationAttributeSchema).optional(),
 
+    partialKey: z.boolean().optional(),
+
     // Optional metadata
     description: z.string().optional(),
     defaultValue: z.string().optional(),
@@ -66,6 +68,9 @@ const erdGenerationRelationshipSchema = z.object({
   sourceParticipation: z.enum(["total", "partial"]).optional(), // Total = double line, Partial = single line
   targetParticipation: z.enum(["total", "partial"]).optional(),
 
+  // Weak entity relationship
+  isIdentifying: z.boolean().optional(),
+
   // Relationship attributes (relationships can have their own attributes)
   attributes: z.array(erdGenerationAttributeSchema).optional(),
 
@@ -77,7 +82,7 @@ const erdGenerationRelationshipSchema = z.object({
  * ERD Information Generation Schema
  * Complete schema for AI-generated ERD schemas
  * Following Chen notation conventions for ERD modeling
- * 
+ *
  * Note: Unlike erdInformationExtractSchema, this does NOT include
  * the `type: z.literal("ERD")` field as it's only used for generation,
  * not for type discrimination during extraction.
@@ -97,4 +102,3 @@ export {
   erdGenerationEntitySchema,
   erdGenerationRelationshipSchema,
 };
-
