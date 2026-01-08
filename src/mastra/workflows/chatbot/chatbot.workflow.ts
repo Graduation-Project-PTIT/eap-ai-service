@@ -6,31 +6,10 @@ import sideQuestionStep from "./steps/side-question-step";
 import schemaWorkflowBranchStep from "./steps/schema-workflow-branch-step";
 import erdWorkflowBranchStep from "./steps/erd-workflow-branch-step";
 
-/**
- * Chatbot Workflow
- *
- * This workflow routes messages based on pre-classified intent from the handler.
- * Intent classification happens BEFORE this workflow to enable smart context building.
- *
- * Routes:
- * - Side questions → answered directly
- * - Schema requests with ERD type → routed to erd-generation workflow
- * - Schema requests with PHYSICAL_DB type → routed to db-generation workflow
- *
- * Flow:
- * 1. Receive pre-classified intent from handler
- * 2. Branch based on intent and diagramType:
- *    - If "side-question" → Side Question Step → End
- *    - If "schema" + "ERD" → ERD Workflow Branch → End
- *    - If "schema" + "PHYSICAL_DB" → Schema Workflow Branch → End
- */
-
-// Both branch outputs must have the same schema (Mastra requirement)
-// All fields are present in both branches, with optional values where needed
 const branchOutputSchema = z.object({
   response: z.string().optional(),
-  updatedSchema: dbInformationGenerationSchema.optional(), // Physical DB schema
-  updatedErdSchema: erdInformationGenerationSchema.optional(), // ERD schema
+  updatedSchema: dbInformationGenerationSchema.optional(),
+  updatedErdSchema: erdInformationGenerationSchema.optional(),
   ddlScript: z.string().optional(),
   agentResponse: z.string().optional(),
   isSideQuestion: z.boolean(),
@@ -41,7 +20,6 @@ const branchOutputSchema = z.object({
 const chatbotWorkflow = createWorkflow({
   id: "chatbotWorkflow",
 
-  // Input: Raw data - each step builds its own context
   inputSchema: z.object({
     userMessage: z
       .string()
@@ -52,7 +30,6 @@ const chatbotWorkflow = createWorkflow({
       .nullable()
       .describe("Business domain context for search query enrichment"),
 
-    // Raw schema data - steps build context as needed
     currentErdSchema: z
       .any()
       .nullable()
@@ -66,7 +43,6 @@ const chatbotWorkflow = createWorkflow({
       .nullable()
       .describe("Current database schema DDL"),
 
-    // Conversation history with timestamps for context building
     conversationHistory: z
       .array(
         z.object({
@@ -78,7 +54,6 @@ const chatbotWorkflow = createWorkflow({
       .optional()
       .describe("Previous conversation messages"),
 
-    // Classification results
     intent: z
       .enum(["schema", "side-question"])
       .describe("Pre-classified intent from handler"),
@@ -102,12 +77,9 @@ const chatbotWorkflow = createWorkflow({
       .describe("Enable or disable web search tool"),
   }),
 
-  // Output: Union type that can be either side question response or schema generation result
   outputSchema: branchOutputSchema,
 })
-  // Branch based on pre-classified intent from handler
   .branch([
-    // If intent is "side-question" → run side question step
     [
       async ({
         inputData,
@@ -119,7 +91,6 @@ const chatbotWorkflow = createWorkflow({
       },
       sideQuestionStep,
     ],
-    // If intent is "schema" and diagramType is "ERD" → run ERD workflow
     [
       async ({
         inputData,
@@ -131,7 +102,6 @@ const chatbotWorkflow = createWorkflow({
       },
       erdWorkflowBranchStep,
     ],
-    // If intent is "schema" and diagramType is "PHYSICAL_DB" → run schema workflow
     [
       async ({
         inputData,

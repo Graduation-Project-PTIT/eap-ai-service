@@ -1,15 +1,6 @@
 import { createStep } from "@mastra/core";
 import z from "zod";
 
-/**
- * Intent Classification Step
- *
- * This step classifies the user's message intent:
- * - "schema": User wants to create/modify database schema
- * - "side-question": User has a general question or off-topic query
- *
- * The classification helps route the conversation to the appropriate handler.
- */
 const intentClassificationStep = createStep({
   id: "intentClassificationStep",
 

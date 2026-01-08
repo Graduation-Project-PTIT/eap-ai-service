@@ -8,19 +8,6 @@ import {
 } from "../../../utils/content-summarizer";
 import { buildSideQuestionContext } from "../../../utils/context-utils";
 
-/**
- * Side Question Handling Step
- *
- * This step handles general questions or off-topic queries.
- * It builds its own context from raw data and optionally enriches it with web search.
- *
- * Flow:
- * 1. Build context from raw schema and conversation history
- * 2. If enableSearch = true → Execute general knowledge search
- * 3. Summarize search results (80-90% compression)
- * 4. Prepend summarized search to context
- * 5. Generate response using the enhanced context
- */
 const sideQuestionStep = createStep({
   id: "sideQuestionStep",
 
@@ -75,7 +62,6 @@ const sideQuestionStep = createStep({
     } = inputData;
     const agent = mastra.getAgent("sideQuestionAgent");
 
-    // Build context from raw data
     const baseContext = buildSideQuestionContext({
       userMessage,
       erdSchema: currentErdSchema,
@@ -97,7 +83,6 @@ const sideQuestionStep = createStep({
         searchPerformed: false,
       };
 
-      // ===== STEP 1: Execute Web Search (if enabled) =====
       if (enableSearch) {
         console.log(
           `🔍 Executing general knowledge search for: "${userMessage}"`
@@ -112,14 +97,12 @@ const sideQuestionStep = createStep({
           });
 
           if (searchResult) {
-            // ===== STEP 2: Summarize Search Results =====
             const summary: SummarizedSearchResult = await summarizeSearchResult(
               searchResult.searchQuery,
               searchResult.fullContent,
               "general"
             );
 
-            // ===== STEP 3: Format Summarized Context =====
             searchContext = `\n\n## 📚 Search Context (Summarized)\n\n`;
             searchContext += `*The following information has been gathered to help answer your question:*\n\n`;
             searchContext += `### 📖 General Knowledge\n\n`;
@@ -145,7 +128,6 @@ const sideQuestionStep = createStep({
         }
       }
 
-      // ===== STEP 4: Build Enhanced Context =====
       const enhancedContext = searchContext
         ? `${searchContext}${baseContext}`
         : baseContext;
@@ -154,7 +136,6 @@ const sideQuestionStep = createStep({
         `💬 Answering side question (context: ${enhancedContext.length} chars)`
       );
 
-      // Generate response using enhanced context
       const result = await agent.generate(enhancedContext);
 
       const response = result.text;

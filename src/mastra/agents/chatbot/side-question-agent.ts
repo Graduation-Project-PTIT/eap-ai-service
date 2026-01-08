@@ -5,12 +5,6 @@ import { gemini25Flash } from "../../models/google";
 import { gpt41, gpt41Mini } from "../../models/openai";
 import { claudeHaiku45 } from "../../models/anthropic";
 
-/**
- * Side Question Agent
- *
- * This agent handles general questions that are not related to schema design.
- * It maintains conversation history to provide contextual responses.
- */
 export const sideQuestionAgent = new Agent({
   name: "sideQuestionAgent",
 

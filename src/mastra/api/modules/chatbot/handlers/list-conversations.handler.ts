@@ -3,16 +3,12 @@ import { db } from "../../../db";
 import { chatbotConversationHistory } from "../../../db/schema";
 import { eq, desc } from "drizzle-orm";
 
-/**
- * List all conversations for the authenticated user
- */
 const listConversationsHandler = async (c: Context) => {
   try {
     const user = c.get("user");
 
     console.log(`📋 Fetching conversations for user: ${user.sub}`);
 
-    // Fetch all conversations for this user, ordered by most recent
     const conversations = await db
       .select({
         id: chatbotConversationHistory.id,

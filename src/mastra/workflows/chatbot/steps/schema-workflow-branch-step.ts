@@ -4,13 +4,6 @@ import dbInformationGenerationSchema from "../../../../schemas/dbInformationGene
 import erdInformationGenerationSchema from "../../../../schemas/erdInformationGenerationSchema";
 import { buildSchemaGenerationContext } from "../../../utils/context-utils";
 
-/**
- * Schema Workflow Branch Step
- *
- * This step invokes the existing dbGenerationWorkflow
- * when the intent is classified as "schema" with diagramType "PHYSICAL_DB".
- * It builds the appropriate context based on create/modify intent.
- */
 const schemaWorkflowBranchStep = createStep({
   id: "schemaWorkflowBranchStep",
 
@@ -58,12 +51,11 @@ const schemaWorkflowBranchStep = createStep({
       enableSearch,
     } = inputData;
 
-    // Build context optimized for Physical DB generation
     const fullContext = buildSchemaGenerationContext({
       userMessage,
       schemaIntent,
       diagramType: "PHYSICAL_DB",
-      erdSchema: null, // Physical DB uses DDL, not ERD
+      erdSchema: null,
       ddl: currentDdl,
       conversationHistory: conversationHistory || [],
     });
