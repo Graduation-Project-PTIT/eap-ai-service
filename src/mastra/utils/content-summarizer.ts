@@ -5,7 +5,7 @@ const summarizerAgent = new Agent({
   name: "contentSummarizerAgent",
   instructions:
     "You are a specialized agent that extracts database-relevant information from search results.",
-  model: gemini25FlashLite, // Fast & cheap model for summarization
+  model: gemini25FlashLite,
 });
 
 export interface SummarizedSearchResult {
